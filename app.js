@@ -267,6 +267,7 @@ function renderResults(){
           ${x.phone?`<a href="${escapeHtml(phoneLink(x.phone))}" target="_blank" rel="noreferrer">WhatsApp ↗</a>`:""}
           <a href="${escapeHtml(googleSearchUrl(x.name,x.city,"telefone contato WhatsApp"))}" target="_blank" rel="noopener noreferrer">Buscar telefone ↗</a>
           <a href="${escapeHtml(googleSearchUrl(x.name,x.city))}" target="_blank" rel="noopener noreferrer">Ver empresa no Google ↗</a>
+          <a href="${escapeHtml(googleSearchUrl(x.name,x.city,"Instagram oficial"))}" target="_blank" rel="noopener noreferrer">Buscar Instagram ↗</a>
           <a href="${escapeHtml(x.osmUrl)}" target="_blank" rel="noreferrer">Ver no OpenStreetMap ↗</a>
           ${x.lat&&x.lon?`<a href="https://www.google.com/maps/search/?api=1&query=${x.lat},${x.lon}" target="_blank" rel="noreferrer">Mapa ↗</a>`:""}
         </div>
@@ -333,6 +334,7 @@ function renderSaved(){
           <a href="${escapeHtml(x.osmUrl)}" target="_blank" rel="noreferrer">Fonte ↗</a>
           <a href="${escapeHtml(googleSearchUrl(x.name,x.city||x.address,"telefone contato WhatsApp"))}" target="_blank" rel="noopener noreferrer">Buscar telefone ↗</a>
           <a href="${escapeHtml(googleSearchUrl(x.name,x.city||x.address))}" target="_blank" rel="noopener noreferrer">Ver empresa no Google ↗</a>
+          <a href="${escapeHtml(googleSearchUrl(x.name,x.city||x.address,"Instagram oficial"))}" target="_blank" rel="noopener noreferrer">Buscar Instagram ↗</a>
         </div>
       </div>
       <div class="lead-actions">
@@ -430,4 +432,4 @@ $("installBtn").addEventListener("click",async()=>{
 
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
   window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
-}
+        }
