@@ -1,3 +1,4 @@
+
 const $ = (id) => document.getElementById(id);
 const STORAGE_KEY = "leadfinder-brasil-leads-v1";
 
@@ -8,6 +9,52 @@ let installPrompt = null;
 const SEGMENTS = {
   all: { label: "Todos os segmentos", filter: null },
   restaurant: { label: "Restaurantes e lanchonetes", filter: '["amenity"~"restaurant|fast_food|cafe|bar|food_court"]' },
+
+  acai: {
+    label: "Açaíterias e lojas de açaí",
+    filters: [
+      '["name"~"acai|açaí|acaiteria|açaiteria|açaíteria",i]',
+      '["cuisine"~"acai|açaí",i]'
+    ]
+  },
+  icecream: {
+    label: "Sorveterias e sobremesas",
+    filters: [
+      '["amenity"="ice_cream"]',
+      '["shop"~"ice_cream|confectionery|pastry"]',
+      '["name"~"sorveteria|sorvete|gelateria",i]'
+    ]
+  },
+  burger: {
+    label: "Hamburguerias",
+    filters: [
+      '["cuisine"~"burger|hamburger",i]',
+      '["amenity"="fast_food"]["name"~"burger|hamburg|smash",i]',
+      '["amenity"="restaurant"]["name"~"burger|hamburg|smash",i]'
+    ]
+  },
+  pizza: {
+    label: "Pizzarias",
+    filters: [
+      '["cuisine"="pizza"]',
+      '["amenity"~"restaurant|fast_food"]["name"~"pizza|pizzaria",i]'
+    ]
+  },
+  snack: {
+    label: "Lanchonetes e hot dogs",
+    filters: [
+      '["amenity"="fast_food"]',
+      '["amenity"="restaurant"]["name"~"lanche|hot dog|cachorro-quente",i]'
+    ]
+  },
+  bakery: {
+    label: "Docerias e confeitarias",
+    filters: [
+      '["shop"~"pastry|confectionery"]',
+      '["name"~"doceria|confeitaria|brigadeiro|bolo",i]'
+    ]
+  },
+
   beauty: { label: "Barbearias e salões", filter: '["shop"~"hairdresser|beauty"]' },
   health: { label: "Clínicas e saúde", filter: '["amenity"~"doctors|dentist|clinic|veterinary"]' },
   auto: { label: "Oficinas e automotivo", filter: '["shop"~"car_repair|tyres|car"]' },
@@ -122,8 +169,6 @@ function hasWebsite(lead) {
 function prospectingPriority(lead) {
   let score = 0;
 
-  // Ausência de site cadastrado é um sinal para investigar,
-  // não uma confirmação de que a empresa não possui site.
   if (!hasWebsite(lead)) score += 60;
   if (lead.phone) score += 20;
   if (lead.address) score += 10;
@@ -240,6 +285,16 @@ function buildQuery(lat, lon, radius, segment) {
       nwr(around:${radius},${lat},${lon})["name"]["tourism"];
       nwr(around:${radius},${lat},${lon})["name"]["leisure"];
     );out center tags;`;
+  }
+
+  if (Array.isArray(selected.filters)) {
+    const clauses = selected.filters
+      .map(filter =>
+        `nwr(around:${radius},${lat},${lon})${filter}["name"];`
+      )
+      .join("\n");
+
+    return `[out:json][timeout:35];(${clauses});out center tags;`;
   }
 
   return `[out:json][timeout:35];nwr(around:${radius},${lat},${lon})${selected.filter}["name"];out center tags;`;
