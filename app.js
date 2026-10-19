@@ -8,7 +8,6 @@ let installPrompt = null;
 const SEGMENTS = {
   all: { label: "Todos os segmentos", filter: null },
   restaurant: { label: "Restaurantes e lanchonetes", filter: '["amenity"~"restaurant|fast_food|cafe|bar|food_court"]' },
-
   acai: {
     label: "Açaíterias e lojas de açaí",
     filters: [
@@ -19,7 +18,6 @@ const SEGMENTS = {
       '["brand"~"acai|açaí",i]'
     ]
   },
-
   icecream: {
     label: "Sorveterias e sobremesas",
     filters: [
@@ -57,7 +55,6 @@ const SEGMENTS = {
       '["name"~"doceria|confeitaria|brigadeiro|bolo",i]'
     ]
   },
-
   beauty: { label: "Barbearias e salões", filter: '["shop"~"hairdresser|beauty"]' },
   health: { label: "Clínicas e saúde", filter: '["amenity"~"doctors|dentist|clinic|veterinary"]' },
   auto: { label: "Oficinas e automotivo", filter: '["shop"~"car_repair|tyres|car"]' },
@@ -106,7 +103,7 @@ function hideStatus() {
 function setBusy(busy) {
   $("searchBtn").disabled = busy;
   $("searchBtn").textContent = busy
-    ? "Buscando empresas…" : "⌕  Buscar empresas";
+    ? "⏳ Buscando empresas…" : "🔎 Buscar empresas";
 }
 
 function websiteOf(t) {
@@ -163,21 +160,17 @@ function dedupe(list) {
   });
 }
 
-/* PONTUAÇÃO DE PROSPECÇÃO */
-
 function hasWebsite(lead) {
   return Boolean((lead.website || "").trim());
 }
 
 function prospectingPriority(lead) {
   let score = 0;
-
   if (!hasWebsite(lead)) score += 60;
   if (lead.phone) score += 20;
   if (lead.address) score += 10;
   if (lead.lat != null && lead.lon != null) score += 5;
   if (lead.category && lead.category !== "Negócio local") score += 5;
-
   return Math.min(100, score);
 }
 
@@ -195,25 +188,17 @@ function sortProspects(list) {
   );
 }
 
-/* OBSERVAÇÕES DOS LEADS SALVOS */
-
 function editLeadNotes(id) {
   const lead = savedLeads.find(x => x.id === id);
   if (!lead) return;
 
-  const notes = prompt(
-    "Observações sobre este negócio:",
-    lead.notes || ""
-  );
-
+  const notes = prompt("Observações sobre este negócio:", lead.notes || "");
   if (notes === null) return;
 
   lead.notes = notes.trim();
   persistSaved();
   setStatus("Observações salvas neste dispositivo.", "success");
 }
-
-/* ABORDAGEM COMERCIAL */
 
 function outreachMessage(lead) {
   return `Olá, ${lead.name || "tudo bem"}! Tudo bem?
@@ -292,11 +277,8 @@ function buildQuery(lat, lon, radius, segment) {
 
   if (Array.isArray(selected.filters)) {
     const clauses = selected.filters
-      .map(filter =>
-        `nwr(around:${radius},${lat},${lon})${filter}["name"];`
-      )
+      .map(filter => `nwr(around:${radius},${lat},${lon})${filter}["name"];`)
       .join("\n");
-
     return `[out:json][timeout:35];(${clauses});out center tags;`;
   }
 
@@ -385,7 +367,26 @@ function filteredResults() {
   const filter = $("filter").value;
   if (filter === "no-site") return currentResults.filter(x => !hasWebsite(x));
   if (filter === "with-site") return currentResults.filter(x => hasWebsite(x));
+  if (filter === "with-phone") return currentResults.filter(x => Boolean((x.phone || "").trim()));
+  if (filter === "no-phone") return currentResults.filter(x => !((x.phone || "").trim()));
   return currentResults;
+}
+
+function setupContactFilters() {
+  const filter = $("filter");
+  if (!filter || filter.querySelector('[value="with-phone"]')) return;
+
+  const options = [
+    ["with-phone", "📞 Com telefone"],
+    ["no-phone", "🚫 Sem telefone"]
+  ];
+
+  options.reverse().forEach(([value, label]) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    filter.insertBefore(option, filter.options[1] || null);
+  });
 }
 
 function isSaved(id) {
@@ -409,8 +410,10 @@ function safeUrl(url) {
 }
 
 function phoneLink(phone) {
-  const digits = (phone || "").replace(/\D/g, "");
-  return digits ? "https://wa.me/" + digits : "#";
+  let digits = (phone || "").replace(/\D/g, "");
+  if (digits.length === 10 || digits.length === 11) digits = "55" + digits;
+  if (digits.length < 12 || digits.length > 13) return "#";
+  return "https://wa.me/" + digits;
 }
 
 function renderResults() {
@@ -428,6 +431,10 @@ function renderResults() {
 
   root.innerHTML = list.map(x => {
     const noSite = !hasWebsite(x);
+    const whatsappLabel = phoneLink(x.phone) === "#"
+      ? "📞 Ver telefone"
+      : "💬 Tentar WhatsApp";
+
     return `
       <article class="lead-card">
         <div class="lead-avatar">${escapeHtml((x.name || "?").slice(0, 1).toUpperCase())}</div>
@@ -447,19 +454,19 @@ function renderResults() {
             ${x.phone ? '<span class="tag">Telefone disponível</span>' : ""}
           </div>
           <div class="lead-links">
-            ${x.website ? `<a href="${escapeHtml(safeUrl(x.website))}" target="_blank" rel="noopener noreferrer">Abrir site ↗</a>` : ""}
-            ${x.phone ? `<a href="${escapeHtml(phoneLink(x.phone))}" target="_blank" rel="noopener noreferrer">WhatsApp ↗</a>` : ""}
-            <a href="${escapeHtml(googleSearchUrl(x.name, x.city, "telefone contato WhatsApp"))}" target="_blank" rel="noopener noreferrer">Buscar telefone ↗</a>
-            <a href="${escapeHtml(googleSearchUrl(x.name, x.city))}" target="_blank" rel="noopener noreferrer">Ver empresa no Google ↗</a>
-            <a href="${escapeHtml(googleSearchUrl(x.name, x.city, "Instagram oficial"))}" target="_blank" rel="noopener noreferrer">Buscar Instagram ↗</a>
-            <a href="${escapeHtml(x.osmUrl)}" target="_blank" rel="noopener noreferrer">Ver no OpenStreetMap ↗</a>
-            ${x.lat != null && x.lon != null ? `<a href="https://www.google.com/maps/search/?api=1&query=${x.lat},${x.lon}" target="_blank" rel="noopener noreferrer">Mapa ↗</a>` : ""}
+            ${x.website ? `<a href="${escapeHtml(safeUrl(x.website))}" target="_blank" rel="noopener noreferrer">🌐 Abrir site ↗</a>` : ""}
+            ${x.phone ? `<a href="${escapeHtml(phoneLink(x.phone))}" target="_blank" rel="noopener noreferrer">${whatsappLabel} ↗</a>` : ""}
+            <a href="${escapeHtml(googleSearchUrl(x.name, x.city, "telefone contato WhatsApp"))}" target="_blank" rel="noopener noreferrer">📞 Buscar telefone ↗</a>
+            <a href="${escapeHtml(googleSearchUrl(x.name, x.city))}" target="_blank" rel="noopener noreferrer">🔎 Ver empresa no Google ↗</a>
+            <a href="${escapeHtml(googleSearchUrl(x.name, x.city, "Instagram oficial"))}" target="_blank" rel="noopener noreferrer">📷 Buscar Instagram ↗</a>
+            <a href="${escapeHtml(x.osmUrl)}" target="_blank" rel="noopener noreferrer">🗺️ OpenStreetMap ↗</a>
+            ${x.lat != null && x.lon != null ? `<a href="https://www.google.com/maps/search/?api=1&query=${x.lat},${x.lon}" target="_blank" rel="noopener noreferrer">📍 Mapa ↗</a>` : ""}
           </div>
         </div>
         <div class="lead-actions">
-          <button type="button" class="mini-btn" data-copy="${escapeHtml(x.id)}">Copiar abordagem</button>
+          <button type="button" class="mini-btn" data-copy="${escapeHtml(x.id)}">📋 Copiar abordagem</button>
           <button type="button" class="mini-btn ${isSaved(x.id) ? "saved" : ""}" data-save="${escapeHtml(x.id)}">
-            ${isSaved(x.id) ? "✓ Salvo" : "+ Salvar"}
+            ${isSaved(x.id) ? "✓ Salvo" : "🔖 Salvar"}
           </button>
         </div>
       </article>`;
@@ -508,6 +515,10 @@ function renderSaved() {
 
   root.innerHTML = savedLeads.map(x => {
     const noSite = !hasWebsite(x);
+    const whatsappLabel = phoneLink(x.phone) === "#"
+      ? "📞 Ver telefone"
+      : "💬 Tentar WhatsApp";
+
     return `
       <article class="lead-card">
         <div class="lead-avatar">${escapeHtml((x.name || "?").slice(0, 1).toUpperCase())}</div>
@@ -528,19 +539,19 @@ function renderSaved() {
             ${x.notes ? `<span class="tag">Observações: ${escapeHtml(x.notes)}</span>` : ""}
           </div>
           <div class="lead-links">
-            ${x.phone ? `<a href="${escapeHtml(phoneLink(x.phone))}" target="_blank" rel="noopener noreferrer">WhatsApp ↗</a>` : ""}
-            ${x.website ? `<a href="${escapeHtml(safeUrl(x.website))}" target="_blank" rel="noopener noreferrer">Site ↗</a>` : ""}
-            <a href="${escapeHtml(googleSearchUrl(x.name, x.city || x.address, "telefone contato WhatsApp"))}" target="_blank" rel="noopener noreferrer">Buscar telefone ↗</a>
-            <a href="${escapeHtml(googleSearchUrl(x.name, x.city || x.address))}" target="_blank" rel="noopener noreferrer">Ver empresa no Google ↗</a>
-            <a href="${escapeHtml(googleSearchUrl(x.name, x.city || x.address, "Instagram oficial"))}" target="_blank" rel="noopener noreferrer">Buscar Instagram ↗</a>
-            <a href="${escapeHtml(x.osmUrl || "#")}" target="_blank" rel="noopener noreferrer">Fonte ↗</a>
+            ${x.phone ? `<a href="${escapeHtml(phoneLink(x.phone))}" target="_blank" rel="noopener noreferrer">${whatsappLabel} ↗</a>` : ""}
+            ${x.website ? `<a href="${escapeHtml(safeUrl(x.website))}" target="_blank" rel="noopener noreferrer">🌐 Site ↗</a>` : ""}
+            <a href="${escapeHtml(googleSearchUrl(x.name, x.city || x.address, "telefone contato WhatsApp"))}" target="_blank" rel="noopener noreferrer">📞 Buscar telefone ↗</a>
+            <a href="${escapeHtml(googleSearchUrl(x.name, x.city || x.address))}" target="_blank" rel="noopener noreferrer">🔎 Google ↗</a>
+            <a href="${escapeHtml(googleSearchUrl(x.name, x.city || x.address, "Instagram oficial"))}" target="_blank" rel="noopener noreferrer">📷 Instagram ↗</a>
+            <a href="${escapeHtml(x.osmUrl || "#")}" target="_blank" rel="noopener noreferrer">🗺️ Fonte ↗</a>
           </div>
         </div>
         <div class="lead-actions">
-          <button type="button" class="mini-btn" data-copy-saved="${escapeHtml(x.id)}">Copiar abordagem</button>
-          <button type="button" class="mini-btn" data-notes="${escapeHtml(x.id)}">Editar observações</button>
-          <button type="button" class="mini-btn" data-stage="${escapeHtml(x.id)}">Alterar etapa</button>
-          <button type="button" class="mini-btn" data-remove="${escapeHtml(x.id)}">Remover</button>
+          <button type="button" class="mini-btn" data-copy-saved="${escapeHtml(x.id)}">📋 Copiar abordagem</button>
+          <button type="button" class="mini-btn" data-notes="${escapeHtml(x.id)}">📝 Editar observações</button>
+          <button type="button" class="mini-btn" data-stage="${escapeHtml(x.id)}">🔄 Alterar etapa</button>
+          <button type="button" class="mini-btn" data-remove="${escapeHtml(x.id)}">🗑️ Remover</button>
         </div>
       </article>`;
   }).join("");
@@ -599,18 +610,9 @@ function exportCSV(list, filename) {
   ];
 
   const rows = list.map(x => [
-    x.name,
-    x.category,
-    x.website,
-    x.phone,
-    x.address,
-    x.lat,
-    x.lon,
-    x.stage || "Novo",
-    prospectingPriority(x),
-    scoreLabel(x),
-    x.notes || "",
-    x.osmUrl
+    x.name, x.category, x.website, x.phone, x.address,
+    x.lat, x.lon, x.stage || "Novo",
+    prospectingPriority(x), scoreLabel(x), x.notes || "", x.osmUrl
   ]);
 
   const csv = "\uFEFF" +
@@ -647,6 +649,7 @@ $("clearSavedBtn").addEventListener("click", () => {
   }
 });
 
+setupContactFilters();
 updateStats();
 renderSaved();
 
