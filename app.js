@@ -1,4 +1,3 @@
-
 const $ = (id) => document.getElementById(id);
 const STORAGE_KEY = "leadfinder-brasil-leads-v1";
 
@@ -14,9 +13,13 @@ const SEGMENTS = {
     label: "Açaíterias e lojas de açaí",
     filters: [
       '["name"~"acai|açaí|acaiteria|açaiteria|açaíteria",i]',
-      '["cuisine"~"acai|açaí",i]'
+      '["cuisine"~"acai|açaí",i]',
+      '["amenity"~"restaurant|fast_food|cafe"]["name"~"acai|açaí",i]',
+      '["shop"~"beverages|convenience"]["name"~"acai|açaí",i]',
+      '["brand"~"acai|açaí",i]'
     ]
   },
+
   icecream: {
     label: "Sorveterias e sobremesas",
     filters: [
@@ -668,4 +671,4 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   });
-    }
+              }
