@@ -144,7 +144,7 @@ function renderSaved(){
         <h4 class="lead-title">${escapeHtml(x.name)}</h4>
         <div class="lead-meta">${escapeHtml(x.category)}${x.phone?` · ${escapeHtml(x.phone)}`:""}${x.address?`<br>${escapeHtml(x.address)}`:""}</div>
         <div class="lead-tags"><span class="tag ${x.website?"has-site":"no-site"}">${x.website?"Site informado":"Sem site informado"}</span><span class="tag">${escapeHtml(x.stage||"Novo")}</span></div>
-        <div class="lead-links">${x.phone?`<a href="${escapeHtml(phoneLink(x.phone))}" target="_blank" rel="noreferrer">Contato ↗</a>`:""}${x.website?`<a href="${escapeHtml(safeUrl(x.website))}" target="_blank" rel="noreferrer">Site ↗</a>`:""}<a href="${escapeHtml(x.osmUrl)}" target="_blank" rel="noreferrer">Fonte ↗</a></div>
+        <div class="lead-links">${x.phone?`<a href="${escapeHtml(phoneLink(x.phone))}" target="_blank" rel="noreferrer">Contato ↗</a>`:""}${x.website?`<a href="${escapeHtml(safeUrl(x.website))}" target="_blank" rel="noreferrer">Site ↗</a>`:""}<a href="${escapeHtml(x.osmUrl)}" target="_blank" rel="noreferrer">Fonte ↗</a><a href="https://www.google.com/search?q=${encodeURIComponent(x.name+' '+$('city').value)}" target="_blank" rel="noopener noreferrer">Ver empresa no Google ↗</a></div>
       </div>
       <div class="lead-actions"><button class="mini-btn" data-stage="${escapeHtml(x.id)}">Alterar etapa</button><button class="mini-btn" data-remove="${escapeHtml(x.id)}">Remover</button></div>
     </article>`).join("");
