@@ -225,3 +225,15 @@ function renderSaved() {
   });
 }
 renderSaved();
+/* Correção de contraste das opções do pipeline */
+select.pipeline-stage-select {
+  color-scheme: light !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+select.pipeline-stage-select option {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
