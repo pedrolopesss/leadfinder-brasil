@@ -34,7 +34,7 @@ function makeLead(el){
   const t=el.tags||{};
   const lat=el.lat ?? el.center?.lat, lon=el.lon ?? el.center?.lon;
   const site=websiteOf(t);
-  return {id:elementId(el),name:t.name||t.brand||t.operator||"Negócio sem nome cadastrado",category:classify(t),website:site,phone:phoneOf(t),address:addressOf(t),lat,lon,osmUrl:`https://www.openstreetmap.org/${el.type}/${el.id}`,updatedAt:new Date().toISOString()};
+  return {id:elementId(el),name:t.name||t.brand||t.operator||"Negócio sem nome cadastrado",category:classify(t),website:site,phone:phoneOf(t),address:addressOf(t),city:$("city").value.trim(),lat,lon,osmUrl:`https://www.openstreetmap.org/${el.type}/${el.id}`,updatedAt:new Date().toISOString()};
 }
 function classify(t){
   const keys=["amenity","shop","office","tourism","leisure","craft"];
@@ -119,7 +119,7 @@ function renderResults(){
         <h4 class="lead-title">${escapeHtml(x.name)}</h4>
         <div class="lead-meta">${escapeHtml(x.category)}${x.address?` · ${escapeHtml(x.address)}`:""}${x.phone?`<br>Telefone: ${escapeHtml(x.phone)}`:""}</div>
         <div class="lead-tags"><span class="tag ${x.website?"has-site":"no-site"}">${x.website?"Site informado":"Sem site informado"}</span>${x.phone?'<span class="tag">Telefone disponível</span>':""}</div>
-        <div class="lead-links">${x.website?`<a href="${escapeHtml(safeUrl(x.website))}" target="_blank" rel="noreferrer">Abrir site ↗</a>`:""}${x.phone?`<a href="${escapeHtml(phoneLink(x.phone))}" target="_blank" rel="noreferrer">Contato ↗</a>`:""}<a href="${escapeHtml(x.osmUrl)}" target="_blank" rel="noreferrer">Ver no OpenStreetMap ↗</a>${x.lat&&x.lon?`<a href="https://www.google.com/maps/search/?api=1&query=${x.lat},${x.lon}" target="_blank" rel="noreferrer">Mapa ↗</a>`:""}</div>
+        <div class="lead-links">${x.website?`<a href="${escapeHtml(safeUrl(x.website))}" target="_blank" rel="noreferrer">Abrir site ↗</a>`:""}${x.phone?`<a href="${escapeHtml(phoneLink(x.phone))}" target="_blank" rel="noreferrer">WhatsApp ↗</a>`:""}<a href="https://www.google.com/search?q=${encodeURIComponent(x.name+" "+(x.city||$("city").value.trim()))}" target="_blank" rel="noopener noreferrer">Ver empresa no Google ↗</a><a href="${escapeHtml(x.osmUrl)}" target="_blank" rel="noreferrer">Ver no OpenStreetMap ↗</a>${x.lat&&x.lon?`<a href="https://www.google.com/maps/search/?api=1&query=${x.lat},${x.lon}" target="_blank" rel="noreferrer">Mapa ↗</a>`:""}</div>
       </div>
       <div class="lead-actions"><button class="mini-btn ${isSaved(x.id)?"saved":""}" data-save="${escapeHtml(x.id)}">${isSaved(x.id)?"✓ Salvo":"+ Salvar"}</button></div>
     </article>`).join("");
@@ -144,7 +144,7 @@ function renderSaved(){
         <h4 class="lead-title">${escapeHtml(x.name)}</h4>
         <div class="lead-meta">${escapeHtml(x.category)}${x.phone?` · ${escapeHtml(x.phone)}`:""}${x.address?`<br>${escapeHtml(x.address)}`:""}</div>
         <div class="lead-tags"><span class="tag ${x.website?"has-site":"no-site"}">${x.website?"Site informado":"Sem site informado"}</span><span class="tag">${escapeHtml(x.stage||"Novo")}</span></div>
-        <div class="lead-links">${x.phone?`<a href="${escapeHtml(phoneLink(x.phone))}" target="_blank" rel="noreferrer">Contato ↗</a>`:""}${x.website?`<a href="${escapeHtml(safeUrl(x.website))}" target="_blank" rel="noreferrer">Site ↗</a>`:""}<a href="${escapeHtml(x.osmUrl)}" target="_blank" rel="noreferrer">Fonte ↗</a><a href="https://www.google.com/search?q=${encodeURIComponent(x.name+' '+$('city').value)}" target="_blank" rel="noopener noreferrer">Ver empresa no Google ↗</a></div>
+        <div class="lead-links">${x.phone?`<a href="${escapeHtml(phoneLink(x.phone))}" target="_blank" rel="noreferrer">WhatsApp ↗</a>`:""}${x.website?`<a href="${escapeHtml(safeUrl(x.website))}" target="_blank" rel="noreferrer">Site ↗</a>`:""}<a href="${escapeHtml(x.osmUrl)}" target="_blank" rel="noreferrer">Fonte ↗</a><a href="https://www.google.com/search?q=${encodeURIComponent(x.name+" "+(x.city||x.address||$("city").value.trim()))}" target="_blank" rel="noopener noreferrer">Ver empresa no Google ↗</a></div>
       </div>
       <div class="lead-actions"><button class="mini-btn" data-stage="${escapeHtml(x.id)}">Alterar etapa</button><button class="mini-btn" data-remove="${escapeHtml(x.id)}">Remover</button></div>
     </article>`).join("");
