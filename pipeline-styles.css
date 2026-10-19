@@ -1,3 +1,4 @@
+
 /* PIPELINE DE VENDAS — LEADFINDER BRASIL */
 
 .pipeline-dashboard {
@@ -37,7 +38,7 @@
   border: 1px solid var(--border, #dedede);
   border-radius: 12px;
   background: var(--card, #fff);
-  color: inherit;
+  color: #111827;
   text-align: left;
   font: inherit;
   cursor: pointer;
@@ -54,12 +55,14 @@
 }
 
 .pipeline-card span {
+  color: #374151;
   font-size: 0.8rem;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
 .pipeline-card strong {
+  color: #111827;
   font-size: 1.55rem;
   line-height: 1;
   font-weight: 800;
@@ -69,6 +72,7 @@
   display: block;
   width: 100%;
   margin: 4px 0 2px;
+  color: var(--text, #111827);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -80,10 +84,15 @@
   padding: 9px 10px;
   border: 1px solid var(--border, #dedede);
   border-radius: 9px;
-  background: var(--card, #fff);
-  color: inherit;
+  background-color: #ffffff;
+  color: #111827;
   font: inherit;
   font-size: 0.9rem;
+}
+
+.pipeline-stage-select option {
+  background-color: #ffffff;
+  color: #111827;
 }
 
 .pipeline-stage-select:focus-visible,
