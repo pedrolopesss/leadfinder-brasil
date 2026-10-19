@@ -33,20 +33,14 @@ function persistSaved() {
 
 function escapeHtml(value = "") {
   return String(value).replace(/[&<>"']/g, ch => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
+    "&": "&amp;", "<": "&lt;", ">": "&gt;",
+    '"': "&quot;", "'": "&#39;"
   }[ch]));
 }
 
 function normalize(s = "") {
-  return s.toString()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
+  return s.toString().normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
 function setStatus(message, type = "") {
@@ -62,8 +56,7 @@ function hideStatus() {
 function setBusy(busy) {
   $("searchBtn").disabled = busy;
   $("searchBtn").textContent = busy
-    ? "Buscando empresas…"
-    : "⌕  Buscar empresas";
+    ? "Buscando empresas…" : "⌕  Buscar empresas";
 }
 
 function websiteOf(t) {
@@ -75,15 +68,10 @@ function phoneOf(t) {
 }
 
 function addressOf(t) {
-  const parts = [
-    t["addr:housenumber"],
-    t["addr:street"],
-    t["addr:suburb"],
-    t["addr:city"],
-    t["addr:state"]
-  ].filter(Boolean);
-
-  return parts.join(", ");
+  return [
+    t["addr:housenumber"], t["addr:street"],
+    t["addr:suburb"], t["addr:city"], t["addr:state"]
+  ].filter(Boolean).join(", ");
 }
 
 function elementId(el) {
@@ -103,26 +91,21 @@ function makeLead(el) {
     phone: phoneOf(t),
     address: addressOf(t),
     city: $("city").value.trim(),
-    lat,
-    lon,
+    lat, lon,
     osmUrl: `https://www.openstreetmap.org/${el.type}/${el.id}`,
     updatedAt: new Date().toISOString()
   };
 }
 
 function classify(t) {
-  const keys = ["amenity", "shop", "office", "tourism", "leisure", "craft"];
-
-  for (const k of keys) {
+  for (const k of ["amenity", "shop", "office", "tourism", "leisure", "craft"]) {
     if (t[k]) return `${k}: ${t[k].replaceAll("_", " ")}`;
   }
-
   return "Negócio local";
 }
 
 function dedupe(list) {
   const seen = new Set();
-
   return list.filter(x => {
     if (seen.has(x.id)) return false;
     seen.add(x.id);
@@ -130,12 +113,109 @@ function dedupe(list) {
   });
 }
 
-async function geocode(city) {
-  const url =
-    `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&q=${encodeURIComponent(city)}`;
+/* PONTUAÇÃO DE PROSPECÇÃO */
 
+function hasWebsite(lead) {
+  return Boolean((lead.website || "").trim());
+}
+
+function prospectingPriority(lead) {
+  let score = 0;
+
+  // Ausência de site cadastrado é um sinal para investigar,
+  // não uma confirmação de que a empresa não possui site.
+  if (!hasWebsite(lead)) score += 60;
+  if (lead.phone) score += 20;
+  if (lead.address) score += 10;
+  if (lead.lat != null && lead.lon != null) score += 5;
+  if (lead.category && lead.category !== "Negócio local") score += 5;
+
+  return Math.min(100, score);
+}
+
+function scoreLabel(lead) {
+  const score = prospectingPriority(lead);
+  if (score >= 80) return "Prioridade alta";
+  if (score >= 60) return "Prioridade média";
+  return "Prioridade baixa";
+}
+
+function sortProspects(list) {
+  return [...list].sort((a, b) =>
+    prospectingPriority(b) - prospectingPriority(a) ||
+    a.name.localeCompare(b.name, "pt-BR")
+  );
+}
+
+/* OBSERVAÇÕES DOS LEADS SALVOS */
+
+function editLeadNotes(id) {
+  const lead = savedLeads.find(x => x.id === id);
+  if (!lead) return;
+
+  const notes = prompt(
+    "Observações sobre este negócio:",
+    lead.notes || ""
+  );
+
+  if (notes === null) return;
+
+  lead.notes = notes.trim();
+  persistSaved();
+  setStatus("Observações salvas neste dispositivo.", "success");
+}
+
+/* ABORDAGEM COMERCIAL */
+
+function outreachMessage(lead) {
+  return `Olá, ${lead.name || "tudo bem"}! Tudo bem?
+
+Meu nome é [SEU NOME] e trabalho com criação de sites profissionais para empresas.
+
+Encontrei o negócio de vocês enquanto pesquisava empresas da região e gostaria de apresentar uma ideia que pode ajudar a fortalecer a presença da empresa na internet.
+
+Um site profissional pode facilitar o contato com clientes, apresentar os serviços e transmitir mais confiança para quem pesquisa a empresa online.
+
+Posso te mostrar uma ideia de como ficaria um site para vocês, sem compromisso?
+
+Obrigado pela atenção!`;
+}
+
+async function copyText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      const copied = document.execCommand("copy");
+      textarea.remove();
+      if (!copied) throw new Error("Falha ao copiar");
+    }
+    setStatus("Abordagem copiada! Agora é só colar na conversa.", "success");
+  } catch {
+    window.prompt("Copie sua abordagem abaixo:", text);
+  }
+}
+
+function copyApproach(id, source = "results") {
+  const list = source === "saved" ? savedLeads : currentResults;
+  const lead = list.find(x => x.id === id);
+  if (!lead) {
+    setStatus("Não consegui localizar esse lead.", "error");
+    return;
+  }
+  copyText(outreachMessage(lead));
+}
+
+async function geocode(city) {
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&q=${encodeURIComponent(city)}`;
   const response = await fetch(url, {
-    headers: { "Accept": "application/json" }
+    headers: { Accept: "application/json" }
   });
 
   if (!response.ok) {
@@ -143,13 +223,9 @@ async function geocode(city) {
   }
 
   const data = await response.json();
-
   if (!data.length) {
-    throw new Error(
-      "Não encontrei essa cidade. Informe cidade e estado, por exemplo: Vila Velha, Espírito Santo."
-    );
+    throw new Error("Cidade não encontrada. Informe cidade e estado, por exemplo: Vila Velha, Espírito Santo.");
   }
-
   return data[0];
 }
 
@@ -174,7 +250,6 @@ async function queryOverpass(query) {
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter"
   ];
-
   let lastError;
 
   for (const endpoint of endpoints) {
@@ -188,122 +263,21 @@ async function queryOverpass(query) {
       });
 
       if (!response.ok) {
-        throw new Error(
-          response.status === 429
-            ? "O serviço está recebendo muitas buscas. Aguarde um minuto e tente novamente."
-            : `Serviço de busca respondeu com erro (${response.status}).`
-        );
+        throw new Error(response.status === 429
+          ? "Muitas buscas no serviço. Aguarde um minuto e tente novamente."
+          : `Serviço de busca respondeu com erro (${response.status}).`);
       }
 
       const data = await response.json();
-
       if (!Array.isArray(data.elements)) {
         throw new Error("A resposta da busca veio em formato inesperado.");
       }
-
       return data.elements;
     } catch (err) {
       lastError = err;
     }
   }
-
   throw lastError || new Error("Não foi possível acessar a base pública agora.");
-}
-
-/* PRIORIZAÇÃO DE OPORTUNIDADES */
-
-function hasWebsite(lead) {
-  return Boolean((lead.website || "").trim());
-}
-
-function prospectingPriority(lead) {
-  let score = 0;
-
-  // A ausência de site cadastrado é um sinal para investigar,
-  // não uma confirmação de que a empresa não possui site.
-  if (!hasWebsite(lead)) score += 3;
-  if (lead.phone) score += 2;
-  if (lead.address) score += 1;
-
-  return score;
-}
-
-function sortProspects(list) {
-  return [...list].sort((a, b) =>
-    prospectingPriority(b) - prospectingPriority(a) ||
-    a.name.localeCompare(b.name, "pt-BR")
-  );
-}
-
-/* ABORDAGEM COMERCIAL PERSONALIZADA */
-
-function outreachMessage(lead) {
-  const name = lead.name || "tudo bem";
-  const greeting = `Olá, ${name}! Tudo bem?`;
-
-  return `${greeting}
-
-Meu nome é [SEU NOME] e trabalho com criação de sites profissionais para empresas.
-
-Encontrei o negócio de vocês enquanto pesquisava empresas da região e gostaria de apresentar uma ideia que pode ajudar a fortalecer a presença da empresa na internet.
-
-Um site profissional pode facilitar o contato com clientes, apresentar os serviços e transmitir mais confiança para quem pesquisa a empresa online.
-
-Posso te mostrar uma ideia de como ficaria um site para vocês, sem compromisso?
-
-Obrigado pela atenção!`;
-}
-
-async function copyText(text) {
-  try {
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text);
-    } else {
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.style.position = "fixed";
-      textarea.style.opacity = "0";
-      document.body.appendChild(textarea);
-      textarea.select();
-
-      const copied = document.execCommand("copy");
-      textarea.remove();
-
-      if (!copied) throw new Error("Não foi possível copiar.");
-    }
-
-    setStatus("Abordagem copiada! Agora é só colar na conversa com a empresa.", "success");
-  } catch {
-    // Alternativa para navegadores que bloqueiam a área de transferência.
-    const textarea = document.createElement("textarea");
-    textarea.value = text;
-    textarea.setAttribute("readonly", "");
-    textarea.style.position = "fixed";
-    textarea.style.opacity = "0";
-    document.body.appendChild(textarea);
-    textarea.select();
-
-    const copied = document.execCommand("copy");
-    textarea.remove();
-
-    if (copied) {
-      setStatus("Abordagem copiada! Cole a mensagem na conversa.", "success");
-    } else {
-      window.prompt("Copie sua abordagem abaixo:", text);
-    }
-  }
-}
-
-function copyApproach(id, source = "results") {
-  const list = source === "saved" ? savedLeads : currentResults;
-  const lead = list.find(x => x.id === id);
-
-  if (!lead) {
-    setStatus("Não consegui localizar esse lead.", "error");
-    return;
-  }
-
-  copyText(outreachMessage(lead));
 }
 
 async function runSearch(e) {
@@ -320,40 +294,30 @@ async function runSearch(e) {
     const segment = $("segment").value;
 
     setStatus("Localizando a cidade e consultando dados públicos do OpenStreetMap.");
-
     const place = await geocode(city);
     const query = buildQuery(Number(place.lat), Number(place.lon), radius, segment);
     const elements = await queryOverpass(query);
 
-    currentResults = dedupe(elements.map(makeLead))
-      .filter(x => x.name !== "Negócio sem nome cadastrado");
-
-    currentResults = sortProspects(currentResults);
+    currentResults = sortProspects(dedupe(elements.map(makeLead))
+      .filter(x => x.name !== "Negócio sem nome cadastrado"));
 
     renderResults();
     updateStats();
 
     if (currentResults.length) {
       const withoutSite = currentResults.filter(x => !hasWebsite(x)).length;
-
       setStatus(
         `Busca concluída: ${currentResults.length} empresas encontradas. ${withoutSite} sem site informado na base consultada. Confirme as informações antes de abordar os negócios.`,
         "success"
       );
     } else {
-      setStatus(
-        "A busca não retornou empresas com nome nesse raio. Tente ampliar o raio ou escolher outro segmento."
-      );
+      setStatus("Nenhuma empresa com nome encontrada nesse raio. Tente ampliar o raio ou escolher outro segmento.");
     }
   } catch (err) {
     currentResults = [];
     renderResults();
     updateStats();
-
-    setStatus(
-      `${err.message || "Ocorreu um erro inesperado."} Verifique sua conexão e tente novamente mais tarde.`,
-      "error"
-    );
+    setStatus(`${err.message || "Ocorreu um erro inesperado."} Verifique sua conexão e tente novamente.`, "error");
   } finally {
     setBusy(false);
   }
@@ -361,15 +325,8 @@ async function runSearch(e) {
 
 function filteredResults() {
   const filter = $("filter").value;
-
-  if (filter === "no-site") {
-    return currentResults.filter(x => !hasWebsite(x));
-  }
-
-  if (filter === "with-site") {
-    return currentResults.filter(x => hasWebsite(x));
-  }
-
+  if (filter === "no-site") return currentResults.filter(x => !hasWebsite(x));
+  if (filter === "with-site") return currentResults.filter(x => hasWebsite(x));
   return currentResults;
 }
 
@@ -384,13 +341,10 @@ function googleSearchUrl(name, city, extra = "") {
 
 function safeUrl(url) {
   let value = (url || "").trim();
-
-  if (!/^https?:\/\//i.test(value)) {
-    value = "https://" + value;
-  }
-
+  if (!/^https?:\/\//i.test(value)) value = "https://" + value;
   try {
-    return new URL(value).href;
+    const parsed = new URL(value);
+    return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : "#";
   } catch {
     return "#";
   }
@@ -416,68 +370,53 @@ function renderResults() {
 
   root.innerHTML = list.map(x => {
     const noSite = !hasWebsite(x);
-
     return `
       <article class="lead-card">
         <div class="lead-avatar">${escapeHtml((x.name || "?").slice(0, 1).toUpperCase())}</div>
-
         <div class="lead-main">
           <h4 class="lead-title">${escapeHtml(x.name)}</h4>
-
           <div class="lead-meta">
             ${escapeHtml(x.category)}
             ${x.address ? ` · ${escapeHtml(x.address)}` : ""}
             ${x.phone ? `<br>Telefone: ${escapeHtml(x.phone)}` : ""}
           </div>
-
           <div class="lead-tags">
+            <span class="tag">Pontuação: ${prospectingPriority(x)}/100 · ${scoreLabel(x)}</span>
             <span class="tag ${noSite ? "no-site" : "has-site"}">
               ${noSite ? "Sem site informado" : "Site informado"}
             </span>
-
             ${noSite ? '<span class="tag">Oportunidade para investigar</span>' : ""}
             ${x.phone ? '<span class="tag">Telefone disponível</span>' : ""}
           </div>
-
           <div class="lead-links">
             ${x.website ? `<a href="${escapeHtml(safeUrl(x.website))}" target="_blank" rel="noopener noreferrer">Abrir site ↗</a>` : ""}
-
             ${x.phone ? `<a href="${escapeHtml(phoneLink(x.phone))}" target="_blank" rel="noopener noreferrer">WhatsApp ↗</a>` : ""}
-
             <a href="${escapeHtml(googleSearchUrl(x.name, x.city, "telefone contato WhatsApp"))}" target="_blank" rel="noopener noreferrer">Buscar telefone ↗</a>
-
             <a href="${escapeHtml(googleSearchUrl(x.name, x.city))}" target="_blank" rel="noopener noreferrer">Ver empresa no Google ↗</a>
-
             <a href="${escapeHtml(googleSearchUrl(x.name, x.city, "Instagram oficial"))}" target="_blank" rel="noopener noreferrer">Buscar Instagram ↗</a>
-
             <a href="${escapeHtml(x.osmUrl)}" target="_blank" rel="noopener noreferrer">Ver no OpenStreetMap ↗</a>
-
             ${x.lat != null && x.lon != null ? `<a href="https://www.google.com/maps/search/?api=1&query=${x.lat},${x.lon}" target="_blank" rel="noopener noreferrer">Mapa ↗</a>` : ""}
           </div>
         </div>
-
         <div class="lead-actions">
           <button type="button" class="mini-btn" data-copy="${escapeHtml(x.id)}">Copiar abordagem</button>
           <button type="button" class="mini-btn ${isSaved(x.id) ? "saved" : ""}" data-save="${escapeHtml(x.id)}">
             ${isSaved(x.id) ? "✓ Salvo" : "+ Salvar"}
           </button>
         </div>
-      </article>
-    `;
+      </article>`;
   }).join("");
 
-  root.querySelectorAll("[data-save]").forEach(btn => {
-    btn.addEventListener("click", () => saveLead(btn.dataset.save));
-  });
-
-  root.querySelectorAll("[data-copy]").forEach(btn => {
-    btn.addEventListener("click", () => copyApproach(btn.dataset.copy, "results"));
-  });
+  root.querySelectorAll("[data-save]").forEach(btn =>
+    btn.addEventListener("click", () => saveLead(btn.dataset.save))
+  );
+  root.querySelectorAll("[data-copy]").forEach(btn =>
+    btn.addEventListener("click", () => copyApproach(btn.dataset.copy, "results"))
+  );
 }
 
 function saveLead(id) {
   const lead = currentResults.find(x => x.id === id);
-
   if (!lead) return;
 
   if (isSaved(id)) {
@@ -488,7 +427,8 @@ function saveLead(id) {
   savedLeads.unshift({
     ...lead,
     savedAt: new Date().toISOString(),
-    stage: "Novo"
+    stage: "Novo",
+    notes: ""
   });
 
   persistSaved();
@@ -510,55 +450,50 @@ function renderSaved() {
 
   root.innerHTML = savedLeads.map(x => {
     const noSite = !hasWebsite(x);
-
     return `
       <article class="lead-card">
         <div class="lead-avatar">${escapeHtml((x.name || "?").slice(0, 1).toUpperCase())}</div>
-
         <div class="lead-main">
           <h4 class="lead-title">${escapeHtml(x.name)}</h4>
-
           <div class="lead-meta">
             ${escapeHtml(x.category)}
             ${x.phone ? ` · ${escapeHtml(x.phone)}` : ""}
             ${x.address ? `<br>${escapeHtml(x.address)}` : ""}
           </div>
-
           <div class="lead-tags">
+            <span class="tag">Pontuação: ${prospectingPriority(x)}/100 · ${scoreLabel(x)}</span>
             <span class="tag ${noSite ? "no-site" : "has-site"}">
               ${noSite ? "Sem site informado" : "Site informado"}
             </span>
             ${noSite ? '<span class="tag">Oportunidade para investigar</span>' : ""}
             <span class="tag">${escapeHtml(x.stage || "Novo")}</span>
+            ${x.notes ? `<span class="tag">Observações: ${escapeHtml(x.notes)}</span>` : ""}
           </div>
-
           <div class="lead-links">
             ${x.phone ? `<a href="${escapeHtml(phoneLink(x.phone))}" target="_blank" rel="noopener noreferrer">WhatsApp ↗</a>` : ""}
-
             ${x.website ? `<a href="${escapeHtml(safeUrl(x.website))}" target="_blank" rel="noopener noreferrer">Site ↗</a>` : ""}
-
             <a href="${escapeHtml(googleSearchUrl(x.name, x.city || x.address, "telefone contato WhatsApp"))}" target="_blank" rel="noopener noreferrer">Buscar telefone ↗</a>
-
             <a href="${escapeHtml(googleSearchUrl(x.name, x.city || x.address))}" target="_blank" rel="noopener noreferrer">Ver empresa no Google ↗</a>
-
             <a href="${escapeHtml(googleSearchUrl(x.name, x.city || x.address, "Instagram oficial"))}" target="_blank" rel="noopener noreferrer">Buscar Instagram ↗</a>
-
             <a href="${escapeHtml(x.osmUrl || "#")}" target="_blank" rel="noopener noreferrer">Fonte ↗</a>
           </div>
         </div>
-
         <div class="lead-actions">
           <button type="button" class="mini-btn" data-copy-saved="${escapeHtml(x.id)}">Copiar abordagem</button>
+          <button type="button" class="mini-btn" data-notes="${escapeHtml(x.id)}">Editar observações</button>
           <button type="button" class="mini-btn" data-stage="${escapeHtml(x.id)}">Alterar etapa</button>
           <button type="button" class="mini-btn" data-remove="${escapeHtml(x.id)}">Remover</button>
         </div>
-      </article>
-    `;
+      </article>`;
   }).join("");
 
-  root.querySelectorAll("[data-copy-saved]").forEach(btn => {
-    btn.addEventListener("click", () => copyApproach(btn.dataset.copySaved, "saved"));
-  });
+  root.querySelectorAll("[data-copy-saved]").forEach(btn =>
+    btn.addEventListener("click", () => copyApproach(btn.dataset.copySaved, "saved"))
+  );
+
+  root.querySelectorAll("[data-notes]").forEach(btn =>
+    btn.addEventListener("click", () => editLeadNotes(btn.dataset.notes))
+  );
 
   root.querySelectorAll("[data-remove]").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -574,14 +509,9 @@ function renderSaved() {
       if (!lead) return;
 
       const stages = [
-        "Novo",
-        "Contato feito",
-        "Respondeu",
-        "Em negociação",
-        "Convertido",
-        "Sem interesse"
+        "Novo", "Contato feito", "Respondeu",
+        "Em negociação", "Convertido", "Sem interesse"
       ];
-
       lead.stage = stages[(stages.indexOf(lead.stage) + 1) % stages.length];
       persistSaved();
     });
@@ -605,15 +535,9 @@ function exportCSV(list, filename) {
   }
 
   const headers = [
-    "Nome",
-    "Segmento",
-    "Site informado",
-    "Telefone",
-    "Endereço",
-    "Latitude",
-    "Longitude",
-    "Etapa",
-    "Fonte"
+    "Nome", "Segmento", "Site informado", "Telefone",
+    "Endereço", "Latitude", "Longitude", "Etapa",
+    "Pontuação", "Prioridade", "Observações", "Fonte"
   ];
 
   const rows = list.map(x => [
@@ -625,6 +549,9 @@ function exportCSV(list, filename) {
     x.lat,
     x.lon,
     x.stage || "Novo",
+    prospectingPriority(x),
+    scoreLabel(x),
+    x.notes || "",
     x.osmUrl
   ]);
 
@@ -634,13 +561,11 @@ function exportCSV(list, filename) {
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
-
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
@@ -657,7 +582,6 @@ $("exportSavedBtn").addEventListener("click", () =>
 
 $("clearSavedBtn").addEventListener("click", () => {
   if (!savedLeads.length) return;
-
   if (confirm("Tem certeza que deseja apagar todos os leads salvos deste dispositivo?")) {
     savedLeads = [];
     persistSaved();
@@ -679,7 +603,6 @@ $("installBtn").addEventListener("click", async () => {
     setStatus("No Android, abra o menu do navegador e escolha 'Instalar app' ou 'Adicionar à tela inicial'.");
     return;
   }
-
   installPrompt.prompt();
   await installPrompt.userChoice;
   installPrompt = null;
@@ -690,4 +613,4 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   });
-      }
+    }
