@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <meta name="description" content="Encontre negócios locais e organize oportunidades de prospecção.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <title>LeadFinder Brasil</title>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brandmark">LF</div>
+    <div>
+      <p class="eyebrow">PROSPECÇÃO LOCAL</p>
+      <h1>LeadFinder <span>Brasil</span></h1>
+    </div>
+    <button id="installBtn" class="btn btn-ghost hidden" type="button">Instalar app</button>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">ENCONTRE SEU PRÓXIMO CLIENTE</p>
+        <h2>Negócios locais.<br><span>Novas oportunidades.</span></h2>
+        <p class="muted">Pesquise empresas da região, identifique quais não têm site informado e organize sua prospecção em um só lugar.</p>
+      </div>
+      <div class="hero-orb" aria-hidden="true"><span>⌕</span></div>
+    </section>
+
+    <section class="panel search-panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">01 / PESQUISA</p><h3>Encontrar empresas</h3></div>
+        <span class="live-pill"><i></i> Dados reais</span>
+      </div>
+      <form id="searchForm">
+        <label for="city">Cidade e estado</label>
+        <input id="city" name="city" autocomplete="address-level2" placeholder="Ex.: Vila Velha, Espírito Santo" required>
+        <div class="field-grid">
+          <div>
+            <label for="segment">Segmento</label>
+            <select id="segment" name="segment">
+              <option value="all">Todos os segmentos</option>
+              <option value="restaurant">Restaurantes e lanchonetes</option>
+              <option value="beauty">Barbearias e salões</option>
+              <option value="health">Clínicas e saúde</option>
+              <option value="auto">Oficinas e automotivo</option>
+              <option value="retail">Lojas e comércio</option>
+              <option value="services">Serviços profissionais</option>
+              <option value="lodging">Hotéis e hospedagem</option>
+              <option value="fitness">Academias e fitness</option>
+            </select>
+          </div>
+          <div>
+            <label for="radius">Raio de busca</label>
+            <select id="radius" name="radius">
+              <option value="3000">3 km</option>
+              <option value="5000" selected>5 km</option>
+              <option value="10000">10 km</option>
+              <option value="20000">20 km</option>
+            </select>
+          </div>
+        </div>
+        <button id="searchBtn" class="btn btn-primary btn-full" type="submit"><span class="search-icon">⌕</span> Buscar empresas</button>
+      </form>
+      <p class="fineprint">Busca baseada no OpenStreetMap. A cobertura varia por região; ausência de site nos dados não garante que a empresa não tenha um.</p>
+      <div id="status" class="status hidden" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="stats-grid" aria-label="Resumo">
+      <div class="stat-card"><span class="stat-label">Encontradas</span><strong id="foundCount">0</strong><span class="stat-foot">nesta busca</span></div>
+      <div class="stat-card"><span class="stat-label">Sem site informado</span><strong id="noSiteCount">0</strong><span class="stat-foot">oportunidades a verificar</span></div>
+      <div class="stat-card"><span class="stat-label">Salvas</span><strong id="savedCount">0</strong><span class="stat-foot">na sua lista local</span></div>
+    </section>
+
+    <section class="panel results-panel">
+      <div class="section-heading results-heading">
+        <div><p class="eyebrow">02 / RESULTADOS</p><h3>Empresas encontradas</h3></div>
+        <div class="toolbar">
+          <select id="filter" aria-label="Filtrar resultados">
+            <option value="all">Todas</option>
+            <option value="no-site">Sem site informado</option>
+            <option value="with-site">Com site informado</option>
+          </select>
+          <button id="exportBtn" class="btn btn-outline" type="button">Exportar CSV</button>
+        </div>
+      </div>
+      <div id="results" class="results-list">
+        <div class="empty-state"><div class="empty-icon">⌕</div><h4>Sua próxima oportunidade começa aqui</h4><p>Pesquise uma cidade para ver empresas reais disponíveis na base pública.</p></div>
+      </div>
+      <div class="source-note">Dados de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>. Verifique as informações antes de entrar em contato.</div>
+    </section>
+
+    <section class="panel saved-panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">03 / SEU PIPELINE</p><h3>Leads salvos</h3></div>
+        <span id="savedBadge" class="count-badge">0 leads</span>
+      </div>
+      <div id="savedResults" class="saved-list">
+        <p class="muted empty-saved">Você ainda não salvou leads. Salve empresas para montar sua lista de prospecção.</p>
+      </div>
+      <div class="saved-actions">
+        <button id="exportSavedBtn" class="btn btn-outline" type="button">Exportar salvos CSV</button>
+        <button id="clearSavedBtn" class="btn btn-danger-ghost" type="button">Limpar lista</button>
+      </div>
+    </section>
+
+    <footer>
+      <p><strong>LeadFinder Brasil</strong> <span>• MVP gratuito</span></p>
+      <p>Use os dados de forma responsável. Respeite a privacidade e as preferências de contato das empresas.</p>
+    </footer>
+  </main>
+  <script src="app.js" defer></script>
+</body>
+</html>
