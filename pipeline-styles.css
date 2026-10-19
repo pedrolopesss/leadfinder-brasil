@@ -1,0 +1,121 @@
+/* PIPELINE DE VENDAS — LEADFINDER BRASIL */
+
+.pipeline-dashboard {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0 22px;
+  width: 100%;
+}
+
+.pipeline-heading {
+  grid-column: 1 / -1;
+  margin-bottom: 2px;
+}
+
+.pipeline-heading h3 {
+  margin: 0 0 5px;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.pipeline-heading p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.75;
+}
+
+.pipeline-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  min-height: 88px;
+  padding: 13px;
+  border: 1px solid var(--border, #dedede);
+  border-radius: 12px;
+  background: var(--card, #fff);
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.18s ease, transform 0.18s ease;
+}
+
+.pipeline-card:hover {
+  transform: translateY(-2px);
+}
+
+.pipeline-card.active {
+  border: 2px solid var(--primary, #6d4aff);
+  padding: 12px;
+}
+
+.pipeline-card span {
+  font-size: 0.8rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.pipeline-card strong {
+  font-size: 1.55rem;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.pipeline-stage-label {
+  display: block;
+  width: 100%;
+  margin: 4px 0 2px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.pipeline-stage-select {
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 1px solid var(--border, #dedede);
+  border-radius: 9px;
+  background: var(--card, #fff);
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.pipeline-stage-select:focus-visible,
+.pipeline-card:focus-visible {
+  outline: 2px solid var(--primary, #6d4aff);
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .pipeline-dashboard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .pipeline-card {
+    min-height: 78px;
+    padding: 11px;
+  }
+
+  .pipeline-card.active {
+    padding: 10px;
+  }
+
+  .pipeline-card span {
+    font-size: 0.78rem;
+  }
+
+  .pipeline-card strong {
+    font-size: 1.4rem;
+  }
+
+  .pipeline-stage-select {
+    max-width: 100%;
+  }
+}
