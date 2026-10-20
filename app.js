@@ -201,18 +201,60 @@ function editLeadNotes(id) {
   setStatus("Observações salvas neste dispositivo.", "success");
 }
 
+/* Abordagem comercial personalizada automaticamente */
 function outreachMessage(lead) {
-  return `Olá, ${lead.name || "tudo bem"}! Tudo bem?
+  const rawName = (lead?.name || "").trim();
 
-Meu nome é [SEU NOME] e trabalho com criação de sites profissionais para empresas.
+  const genericNames = [
+    "Negócio sem nome cadastrado",
+    "Negócio local",
+    "Sem nome"
+  ];
 
-Encontrei o negócio de vocês enquanto pesquisava empresas da região e gostaria de apresentar uma ideia que pode ajudar a fortalecer a presença da empresa na internet.
+  const hasRealName = rawName &&
+    !genericNames.some(name =>
+      rawName.toLocaleLowerCase("pt-BR") ===
+      name.toLocaleLowerCase("pt-BR")
+    );
 
-Um site profissional pode facilitar o contato com clientes, apresentar os serviços e transmitir mais confiança para quem pesquisa a empresa online.
+  const company = hasRealName ? rawName : "";
+  const greeting = company
+    ? `Olá, pessoal da ${company}! Tudo bem?`
+    : "Olá! Tudo bem?";
 
-Posso te mostrar uma ideia de como ficaria um site para vocês, sem compromisso?
+  const companyMention = company
+    ? `a ${company}`
+    : "a empresa de vocês";
 
-Obrigado pela atenção!`;
+  const category = (lead?.category || "").toLowerCase();
+
+  let benefit =
+    "apresentar os serviços, facilitar o contato com clientes e transmitir mais confiança para quem pesquisa a empresa na internet.";
+
+  if (/restaurant|fast_food|food|cafe|bar|ice_cream|acai|sorvete|lanchonete/i.test(category)) {
+    benefit =
+      "apresentar o cardápio, divulgar os produtos e facilitar o contato e os pedidos dos clientes.";
+  } else if (/hairdresser|beauty|barber|sal[aã]o/i.test(category)) {
+    benefit =
+      "apresentar os serviços, mostrar os trabalhos realizados e facilitar o agendamento de clientes.";
+  } else if (/doctor|dentist|clinic|health|cl[ií]nica/i.test(category)) {
+    benefit =
+      "apresentar os serviços, disponibilizar informações úteis e facilitar o contato para agendamentos.";
+  } else if (/car_repair|car|tyres|auto|oficina/i.test(category)) {
+    benefit =
+      "apresentar os serviços, explicar como funciona o atendimento e facilitar o contato de novos clientes.";
+  } else if (/hotel|guest_house|hostel|lodging/i.test(category)) {
+    benefit =
+      "apresentar as acomodações, mostrar fotos e facilitar as consultas sobre reservas.";
+  }
+
+  return `${greeting}
+
+Trabalho com criação de sites profissionais para empresas e tive uma ideia que pode ajudar a fortalecer a presença de ${companyMention} na internet.
+
+Um site profissional pode ${benefit}
+
+Gostaria de apresentar uma ideia de como poderia ficar um site para ${companyMention}, sem compromisso. Posso mostrar para vocês?`;
 }
 
 async function copyText(text) {
