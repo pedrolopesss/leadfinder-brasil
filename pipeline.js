@@ -1,239 +1,269 @@
-const PIPELINE_STAGES = [
-  "Novo",
-  "Contato feito",
-  "Respondeu",
-  "Em negociação",
-  "Convertido",
-  "Sem interesse"
-];
 
-let pipelineFilter = "Todos";
+/* ==========================================
+   LEADFINDER BRASIL — PIPELINE DE VENDAS
+   Layout responsivo, moderno e acessível
+   ========================================== */
 
-function renderPipelineDashboard() {
-  const savedRoot = document.getElementById("savedResults");
-  if (!savedRoot) return;
-
-  let dashboard = document.getElementById("pipelineDashboard");
-
-  if (!dashboard) {
-    dashboard = document.createElement("section");
-    dashboard.id = "pipelineDashboard";
-    dashboard.className = "pipeline-dashboard";
-    dashboard.setAttribute("aria-label", "Pipeline de vendas");
-
-    savedRoot.parentNode.insertBefore(dashboard, savedRoot);
-  }
-
-  const counts = {};
-  PIPELINE_STAGES.forEach(stage => {
-    counts[stage] = savedLeads.filter(lead =>
-      (lead.stage || "Novo") === stage
-    ).length;
-  });
-
-  dashboard.innerHTML = `
-    <div class="pipeline-heading">
-      <h3>Pipeline de vendas</h3>
-      <p>Acompanhe seus contatos e negociações.</p>
-    </div>
-
-    <button type="button"
-      class="pipeline-card ${pipelineFilter === "Todos" ? "active" : ""}"
-      data-pipeline-filter="Todos">
-      <span>Todos os leads</span>
-      <strong>${savedLeads.length}</strong>
-    </button>
-
-    ${PIPELINE_STAGES.map(stage => `
-      <button type="button"
-        class="pipeline-card ${pipelineFilter === stage ? "active" : ""}"
-        data-pipeline-filter="${escapeHtml(stage)}">
-        <span>${escapeHtml(stage)}</span>
-        <strong>${counts[stage]}</strong>
-      </button>
-    `).join("")}
-  `;
-
-  dashboard.querySelectorAll("[data-pipeline-filter]").forEach(button => {
-    button.addEventListener("click", () => {
-      pipelineFilter = button.dataset.pipelineFilter;
-      renderSaved();
-    });
-  });
+.pipeline-dashboard {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0 24px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-// Substitui a renderização da lista salva, mantendo notas, remoção,
-// cópia da abordagem e exportação já existentes no app.js.
-function renderSaved() {
-  const badge = document.getElementById("savedBadge");
-  const root = document.getElementById("savedResults");
-
-  if (!root) return;
-
-  if (badge) {
-    badge.textContent =
-      `${savedLeads.length} ${savedLeads.length === 1 ? "lead" : "leads"}`;
-  }
-
-  renderPipelineDashboard();
-
-  const visibleLeads = pipelineFilter === "Todos"
-    ? savedLeads
-    : savedLeads.filter(lead =>
-        (lead.stage || "Novo") === pipelineFilter
-      );
-
-  if (!visibleLeads.length) {
-    root.innerHTML = `
-      <p class="muted empty-saved">
-        ${savedLeads.length === 0
-          ? "Você ainda não salvou leads. Salve empresas para montar sua lista de prospecção."
-          : "Nenhum lead nesta etapa. Escolha outra etapa no pipeline."}
-      </p>`;
-    return;
-  }
-
-  root.innerHTML = visibleLeads.map(lead => {
-    const noSite = !hasWebsite(lead);
-    const stage = PIPELINE_STAGES.includes(lead.stage)
-      ? lead.stage
-      : "Novo";
-
-    return `
-      <article class="lead-card">
-        <div class="lead-avatar">
-          ${escapeHtml((lead.name || "?").slice(0, 1).toUpperCase())}
-        </div>
-
-        <div class="lead-main">
-          <h4 class="lead-title">${escapeHtml(lead.name)}</h4>
-
-          <div class="lead-meta">
-            ${escapeHtml(lead.category || "Negócio local")}
-            ${lead.phone ? ` · ${escapeHtml(lead.phone)}` : ""}
-            ${lead.address ? `<br>${escapeHtml(lead.address)}` : ""}
-          </div>
-
-          <div class="lead-tags">
-            <span class="tag">
-              Pontuação: ${prospectingPriority(lead)}/100 · ${scoreLabel(lead)}
-            </span>
-
-            <span class="tag ${noSite ? "no-site" : "has-site"}">
-              ${noSite ? "Sem site informado" : "Site informado"}
-            </span>
-
-            <span class="tag">Etapa: ${escapeHtml(stage)}</span>
-
-            ${lead.notes
-              ? `<span class="tag">Observações: ${escapeHtml(lead.notes)}</span>`
-              : ""}
-          </div>
-
-          <div class="lead-links">
-            ${lead.phone
-              ? `<a href="${escapeHtml(phoneLink(lead.phone))}" target="_blank" rel="noopener noreferrer">WhatsApp ↗</a>`
-              : ""}
-
-            ${lead.website
-              ? `<a href="${escapeHtml(safeUrl(lead.website))}" target="_blank" rel="noopener noreferrer">Site ↗</a>`
-              : ""}
-
-            <a href="${escapeHtml(googleSearchUrl(lead.name, lead.city || lead.address, "telefone contato WhatsApp"))}"
-              target="_blank" rel="noopener noreferrer">Buscar telefone ↗</a>
-
-            <a href="${escapeHtml(googleSearchUrl(lead.name, lead.city || lead.address))}"
-              target="_blank" rel="noopener noreferrer">Ver empresa no Google ↗</a>
-
-            <a href="${escapeHtml(googleSearchUrl(lead.name, lead.city || lead.address, "Instagram oficial"))}"
-              target="_blank" rel="noopener noreferrer">Buscar Instagram ↗</a>
-
-            ${lead.osmUrl
-              ? `<a href="${escapeHtml(lead.osmUrl)}" target="_blank" rel="noopener noreferrer">Fonte ↗</a>`
-              : ""}
-          </div>
-        </div>
-
-        <div class="lead-actions">
-          <label class="pipeline-stage-label" for="stage-${escapeHtml(lead.id)}">
-            Etapa da venda
-          </label>
-
-          <select class="pipeline-stage-select"
-            id="stage-${escapeHtml(lead.id)}"
-            data-stage-select="${escapeHtml(lead.id)}">
-            ${PIPELINE_STAGES.map(option => `
-              <option value="${escapeHtml(option)}"
-                ${stage === option ? "selected" : ""}>
-                ${escapeHtml(option)}
-              </option>
-            `).join("")}
-          </select>
-
-          <button type="button" class="mini-btn"
-            data-copy-saved="${escapeHtml(lead.id)}">
-            Copiar abordagem
-          </button>
-
-          <button type="button" class="mini-btn"
-            data-notes="${escapeHtml(lead.id)}">
-            Editar observações
-          </button>
-
-          <button type="button" class="mini-btn"
-            data-remove="${escapeHtml(lead.id)}">
-            Remover
-          </button>
-        </div>
-      </article>`;
-  }).join("");
-
-  root.querySelectorAll("[data-stage-select]").forEach(select => {
-    select.addEventListener("change", () => {
-      const lead = savedLeads.find(item =>
-        item.id === select.dataset.stageSelect
-      );
-
-      if (!lead) return;
-
-      lead.stage = select.value;
-      persistSaved();
-      setStatus(`Etapa de "${lead.name}" atualizada.`, "success");
-    });
-  });
-
-  root.querySelectorAll("[data-copy-saved]").forEach(button => {
-    button.addEventListener("click", () =>
-      copyApproach(button.dataset.copySaved, "saved")
-    );
-  });
-
-  root.querySelectorAll("[data-notes]").forEach(button => {
-    button.addEventListener("click", () =>
-      editLeadNotes(button.dataset.notes)
-    );
-  });
-
-  root.querySelectorAll("[data-remove]").forEach(button => {
-    button.addEventListener("click", () => {
-      const id = button.dataset.remove;
-
-      savedLeads = savedLeads.filter(lead => lead.id !== id);
-      persistSaved();
-      renderResults();
-    });
-  });
-}
-renderSaved();
-/* Correção de contraste das opções do pipeline */
-select.pipeline-stage-select {
-  color-scheme: light !important;
-  background: #ffffff !important;
-  color: #111827 !important;
-  -webkit-text-fill-color: #111827 !important;
+.pipeline-heading {
+  grid-column: 1 / -1;
+  margin-bottom: 4px;
 }
 
-select.pipeline-stage-select option {
-  background: #ffffff !important;
-  color: #111827 !important;
+.pipeline-heading h3 {
+  margin: 0 0 7px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.pipeline-heading p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  opacity: 0.75;
+}
+
+/* Cartões de cada etapa */
+
+.pipeline-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 13px;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 104px;
+  padding: 15px;
+
+  border: 1px solid var(--border, #ded8f4);
+  border-radius: 15px;
+
+  background: var(--card, #ffffff);
+  color: var(--text, #171329);
+
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.pipeline-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary, #7c4dff);
+  box-shadow: 0 8px 22px rgba(80, 45, 160, 0.09);
+}
+
+.pipeline-card:active {
+  transform: translateY(0);
+}
+
+.pipeline-card.active {
+  padding: 14px;
+  border: 2px solid var(--primary, #7c4dff);
+  background: var(--card, #ffffff);
+  box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.09);
+}
+
+.pipeline-card span {
+  display: block;
+  color: var(--muted, #625d75);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.pipeline-card strong {
+  display: block;
+  color: var(--text, #171329);
+  font-size: 1.65rem;
+  line-height: 1;
+  font-weight: 850;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Identificação da etapa selecionada */
+
+.pipeline-card.active strong {
+  color: var(--primary, #7c4dff);
+}
+
+/* Rótulo do seletor de etapas */
+
+.pipeline-stage-label {
+  display: block;
+  width: 100%;
+  margin: 8px 0 6px;
+
+  color: var(--text, #171329);
+  font-size: 0.84rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+/* Seletor para movimentar o lead no funil */
+
+.pipeline-stage-select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+
+  border: 1px solid var(--border, #ded8f4);
+  border-radius: 11px;
+
+  background-color: var(--card, #ffffff);
+  color: var(--text, #171329);
+
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.4;
+
+  box-sizing: border-box;
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.pipeline-stage-select:hover {
+  border-color: var(--primary, #7c4dff);
+}
+
+.pipeline-stage-select option {
+  background-color: #ffffff;
+  color: #171329;
+}
+
+/* Acessibilidade: foco visível pelo teclado */
+
+.pipeline-stage-select:focus-visible,
+.pipeline-card:focus-visible {
+  outline: 3px solid var(--primary, #7c4dff);
+  outline-offset: 3px;
+}
+
+/* Tablets e telas intermediárias */
+
+@media (min-width: 601px) and (max-width: 900px) {
+  .pipeline-dashboard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .pipeline-card {
+    min-height: 94px;
+  }
+}
+
+/* Celulares */
+
+@media (max-width: 600px) {
+  .pipeline-dashboard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin: 16px 0 20px;
+  }
+
+  .pipeline-heading {
+    margin-bottom: 3px;
+  }
+
+  .pipeline-heading h3 {
+    font-size: 1.05rem;
+  }
+
+  .pipeline-heading p {
+    font-size: 0.85rem;
+  }
+
+  .pipeline-card {
+    min-height: 88px;
+    padding: 12px;
+    gap: 11px;
+    border-radius: 13px;
+  }
+
+  .pipeline-card.active {
+    padding: 11px;
+  }
+
+  .pipeline-card span {
+    font-size: 0.77rem;
+  }
+
+  .pipeline-card strong {
+    font-size: 1.45rem;
+  }
+
+  .pipeline-stage-label {
+    font-size: 0.82rem;
+  }
+
+  .pipeline-stage-select {
+    min-height: 44px;
+    max-width: 100%;
+    font-size: 0.87rem;
+  }
+}
+
+/* Celulares muito estreitos */
+
+@media (max-width: 360px) {
+  .pipeline-dashboard {
+    gap: 7px;
+  }
+
+  .pipeline-card {
+    min-height: 82px;
+    padding: 10px;
+  }
+
+  .pipeline-card.active {
+    padding: 9px;
+  }
+
+  .pipeline-card span {
+    font-size: 0.73rem;
+  }
+
+  .pipeline-card strong {
+    font-size: 1.3rem;
+  }
+}
+
+/* Respeita usuários que preferem menos animações */
+
+@media (prefers-reduced-motion: reduce) {
+  .pipeline-card,
+  .pipeline-stage-select {
+    transition: none;
+  }
+
+  .pipeline-card:hover {
+    transform: none;
+  }
 }
