@@ -1,3 +1,4 @@
+
 const $ = (id) => document.getElementById(id);
 const STORAGE_KEY = "leadfinder-brasil-leads-v1";
 
@@ -458,7 +459,7 @@ function renderResults() {
             ${x.phone ? `<a href="${escapeHtml(phoneLink(x.phone))}" target="_blank" rel="noopener noreferrer">${whatsappLabel} ↗</a>` : ""}
             <a href="${escapeHtml(googleSearchUrl(x.name, x.city, "telefone contato WhatsApp"))}" target="_blank" rel="noopener noreferrer">📞 Buscar telefone ↗</a>
             <a href="${escapeHtml(googleSearchUrl(x.name, x.city))}" target="_blank" rel="noopener noreferrer">🔎 Ver empresa no Google ↗</a>
-            <a href="${escapeHtml(googleSearchUrl(x.name, x.city, "Instagram oficial"))}" target="_blank" rel="noopener noreferrer">📷 Buscar Instagram ↗</a>
+            <a class="instagram-link" href="${escapeHtml(googleSearchUrl(x.name, x.city, "Instagram oficial"))}" target="_blank" rel="noopener noreferrer">📷 Buscar Instagram ↗</a>
             <a href="${escapeHtml(x.osmUrl)}" target="_blank" rel="noopener noreferrer">🗺️ OpenStreetMap ↗</a>
             ${x.lat != null && x.lon != null ? `<a href="https://www.google.com/maps/search/?api=1&query=${x.lat},${x.lon}" target="_blank" rel="noopener noreferrer">📍 Mapa ↗</a>` : ""}
           </div>
@@ -543,7 +544,7 @@ function renderSaved() {
             ${x.website ? `<a href="${escapeHtml(safeUrl(x.website))}" target="_blank" rel="noopener noreferrer">🌐 Site ↗</a>` : ""}
             <a href="${escapeHtml(googleSearchUrl(x.name, x.city || x.address, "telefone contato WhatsApp"))}" target="_blank" rel="noopener noreferrer">📞 Buscar telefone ↗</a>
             <a href="${escapeHtml(googleSearchUrl(x.name, x.city || x.address))}" target="_blank" rel="noopener noreferrer">🔎 Google ↗</a>
-            <a href="${escapeHtml(googleSearchUrl(x.name, x.city || x.address, "Instagram oficial"))}" target="_blank" rel="noopener noreferrer">📷 Instagram ↗</a>
+            <a class="instagram-link" href="${escapeHtml(googleSearchUrl(x.name, x.city || x.address, "Instagram oficial"))}" target="_blank" rel="noopener noreferrer">📷 Instagram ↗</a>
             <a href="${escapeHtml(x.osmUrl || "#")}" target="_blank" rel="noopener noreferrer">🗺️ Fonte ↗</a>
           </div>
         </div>
@@ -674,4 +675,4 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   });
-              }
+}
