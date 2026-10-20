@@ -476,7 +476,7 @@ function renderResults() {
     const noSite = !hasWebsite(x);
     const whatsappLabel = phoneLink(x.phone) === "#"
       ? "📞 Ver telefone"
-      : "💬 Tentar WhatsApp";
+      : "🟢 WhatsApp";
 
     return `
       <article class="lead-card">
@@ -560,7 +560,7 @@ function renderSaved() {
     const noSite = !hasWebsite(x);
     const whatsappLabel = phoneLink(x.phone) === "#"
       ? "📞 Ver telefone"
-      : "💬 Tentar WhatsApp";
+      : "🟢 WhatsApp";
 
     return `
       <article class="lead-card">
@@ -717,4 +717,4 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   });
-}
+              }
