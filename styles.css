@@ -150,4 +150,134 @@ button, select, input, .lead-links a { -webkit-tap-highlight-color: transparent;
   .topbar h1 { font-size: 16px; }
   .lead-links { gap: 8px; }
   .lead-links a { min-height: 40px; padding: 9px 10px; font-size: 11px; }
-       }
+}
+
+/* REFINAMENTO VISUAL — inspiração em SaaS de prospecção premium */
+:root {
+  --bg: #0b0b18;
+  --panel: #151426;
+  --panel2: #1c1a31;
+  --line: #37304e;
+  --purple: #8b5cf6;
+  --pink: #ec4899;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background:
+    radial-gradient(ellipse at 8% 0%, #552c8a30 0, transparent 35%),
+    radial-gradient(ellipse at 100% 22%, #a52d6b18 0, transparent 30%),
+    var(--bg);
+}
+.topbar { padding-top: 26px; padding-bottom: 26px; }
+.brandmark {
+  border: 1px solid #d8c7ff;
+  background: linear-gradient(145deg, #d8b4fe, #8b5cf6 58%, #6d28d9);
+  color: #fff;
+  box-shadow: 0 8px 28px #8b5cf633;
+}
+.hero {
+  background: linear-gradient(120deg, #24163f 0%, #17152b 55%, #35182f 100%);
+  border-color: #654a91;
+  box-shadow: 0 18px 55px #00000020, inset 0 1px 0 #ffffff0b;
+}
+.hero h2 { letter-spacing: -1.5px; }
+.hero h2 span {
+  color: transparent;
+  background: linear-gradient(90deg, #c4b5fd, #f9a8d4);
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+.panel {
+  background: linear-gradient(155deg, #19172d 0%, #111222 100%);
+  border-color: #39304f;
+  box-shadow: 0 12px 34px #00000018, inset 0 1px 0 #ffffff08;
+}
+.section-heading h3 { letter-spacing: -.65px; }
+.btn-primary {
+  background: linear-gradient(100deg, #8b5cf6, #c026d3 55%, #db2777);
+  border: 1px solid #d8b4fe;
+  color: #fff;
+  box-shadow: 0 7px 22px #8b5cf633, inset 0 1px 0 #ffffff30;
+}
+.btn-primary:hover {
+  background: linear-gradient(100deg, #9b6bff, #d946ef 55%, #ec4899);
+  box-shadow: 0 10px 28px #c026d344;
+  transform: translateY(-1px);
+}
+.stat-card {
+  background: linear-gradient(145deg, #201a35, #141526);
+  border-color: #403453;
+}
+.stat-card strong { color: #f5f0ff; }
+.lead-card {
+  background: linear-gradient(145deg, #1c1a30, #141626);
+  border-color: #39304c;
+  border-radius: 17px;
+  box-shadow: inset 0 1px 0 #ffffff06;
+}
+.lead-card:hover {
+  border-color: #8b5cf6;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px #00000020, 0 0 0 1px #8b5cf61c;
+}
+.lead-avatar {
+  background: linear-gradient(145deg, #3a2458, #25203b);
+  border-color: #7553a6;
+  box-shadow: inset 0 1px 0 #ffffff12;
+}
+.lead-title { font-size: 15px; letter-spacing: -.25px; }
+.tag { border-radius: 8px; }
+.lead-links { gap: 8px; }
+.lead-links a {
+  min-height: 40px;
+  padding: 10px 13px;
+  border-radius: 12px;
+  border-width: 1.5px;
+  background: #27203b;
+  border-color: #7654ad;
+  color: #e9ddff;
+  box-shadow: inset 0 1px 0 #ffffff08;
+}
+.lead-links a:hover {
+  transform: translateY(-1px);
+  background: #3a2a58;
+  border-color: #c4b5fd;
+}
+.lead-links a[href*="wa.me"],
+.lead-links a[href*="whatsapp"] {
+  color: #4ade80;
+  background: #123a2b;
+  border-color: #226b4a;
+}
+.lead-links a[href*="wa.me"]:hover,
+.lead-links a[href*="whatsapp"]:hover {
+  color: #bbf7d0;
+  background: #175338;
+  border-color: #4ade80;
+}
+/* Aplicado quando o link do Instagram recebe a classe instagram-link no app.js */
+.lead-links a.instagram-link {
+  color: #fb7185;
+  background: #3b1d35;
+  border-color: #9d315e;
+}
+.lead-links a.instagram-link:hover {
+  color: #fce7f3;
+  background: #542044;
+  border-color: #f472b6;
+  box-shadow: 0 0 14px #ec489933;
+}
+.lead-actions .mini-btn { min-height: 36px; }
+input, select { min-height: 45px; }
+input::placeholder { color: #77758e; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid #d8b4fe;
+  outline-offset: 3px;
+}
+@media (max-width: 650px) {
+  .hero { background: linear-gradient(145deg, #24163f, #17152b 70%, #2b1830); }
+  .lead-card { border-radius: 15px; }
+  .lead-links a { flex: 1 1 auto; min-width: 125px; }
+  .lead-actions { min-width: 95px; }
+}
