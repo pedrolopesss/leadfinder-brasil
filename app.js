@@ -60,6 +60,16 @@ const SEGMENTS = {
   health: { label: "Clínicas e saúde", filter: '["amenity"~"doctors|dentist|clinic|veterinary"]' },
   auto: { label: "Oficinas e automotivo", filter: '["shop"~"car_repair|tyres|car"]' },
   retail: { label: "Lojas e comércio", filter: '["shop"]' },
+
+  // NOVA CATEGORIA: LOJAS DE ROUPAS
+  clothing: {
+    label: "Lojas de roupas",
+    filters: [
+      '["shop"~"clothes|fashion|boutique"]',
+      '["name"~"roupa|moda|vestuario|vestuário|boutique",i]'
+    ]
+  },
+
   services: { label: "Serviços profissionais", filter: '["office"]' },
   lodging: { label: "Hotéis e hospedagem", filter: '["tourism"~"hotel|guest_house|hostel|motel"]' },
   fitness: { label: "Academias e fitness", filter: '["leisure"~"fitness_centre|sports_centre"]' }
@@ -104,7 +114,8 @@ function hideStatus() {
 function setBusy(busy) {
   $("searchBtn").disabled = busy;
   $("searchBtn").textContent = busy
-    ? "⏳ Buscando empresas…" : "🔎 Buscar empresas";
+    ? "⏳ Buscando empresas…"
+    : "🔎 Buscar empresas";
 }
 
 function websiteOf(t) {
@@ -234,6 +245,9 @@ function outreachMessage(lead) {
   if (/restaurant|fast_food|food|cafe|bar|ice_cream|acai|sorvete|lanchonete/i.test(category)) {
     benefit =
       "apresentar o cardápio, divulgar os produtos e facilitar o contato e os pedidos dos clientes.";
+  } else if (/clothes|fashion|roupa|moda|vestuario|vestuário|boutique/i.test(category)) {
+    benefit =
+      "apresentar as coleções, divulgar as peças, mostrar as novidades e facilitar o contato de clientes interessados nos produtos.";
   } else if (/hairdresser|beauty|barber|sal[aã]o/i.test(category)) {
     benefit =
       "apresentar os serviços, mostrar os trabalhos realizados e facilitar o agendamento de clientes.";
@@ -717,4 +731,4 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   });
-              }
+      }
