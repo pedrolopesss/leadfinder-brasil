@@ -4,160 +4,274 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#111827">
-  <meta name="description" content="Encontre negócios locais e organize oportunidades de prospecção.">
+  <meta name="theme-color" content="#100d1d">
+  <meta name="description" content="Encontre empresas, organize seus leads e acompanhe sua prospecção comercial.">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="pipeline-styles.css">
-  <title>LeadFinder Brasil</title>
+  <title>LeadFinder Brasil — Prospecção inteligente</title>
 </head>
 <body>
   <header class="topbar">
-    <div class="brandmark">LF</div>
-    <div>
-      <p class="eyebrow">PROSPECÇÃO LOCAL</p>
-      <h1>LeadFinder <span>Brasil</span></h1>
-    </div>
+    <a class="brand" href="#" aria-label="LeadFinder Brasil, início">
+      <span class="brandmark">LF</span>
+      <span class="brand-copy">
+        <strong>LeadFinder <span>Brasil</span></strong>
+        <small>PROSPECÇÃO INTELIGENTE</small>
+      </span>
+    </a>
     <button id="installBtn" class="btn btn-ghost hidden" type="button">Instalar app</button>
   </header>
 
   <main class="container">
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">ENCONTRE SEU PRÓXIMO CLIENTE</p>
-        <h2>Negócios locais.<br><span>Novas oportunidades.</span></h2>
-        <p class="muted">Pesquise empresas da região, identifique quais não têm site informado e organize sua prospecção em um só lugar.</p>
+        <span class="eyebrow"><span class="pulse"></span> SUA CENTRAL DE PROSPECÇÃO</span>
+        <h1>Transforme empresas em <span>oportunidades.</span></h1>
+        <p>Encontre negócios locais, organize seus contatos e acompanhe cada oportunidade até fechar um cliente.</p>
+        <a class="btn btn-primary hero-cta" href="#searchSection">＋ Encontrar empresas</a>
       </div>
-      <div class="hero-orb" aria-hidden="true"><span>⌕</span></div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="orb orb-one"></div>
+        <div class="orb orb-two"></div>
+        <div class="hero-symbol">↗</div>
+        <div class="hero-mini-card"><span>LEADS</span><strong>+</strong></div>
+      </div>
     </section>
 
-    <section class="panel search-panel">
+    <nav class="quick-nav" aria-label="Navegação principal">
+      <a href="#dashboard">Visão geral</a>
+      <a href="#searchSection">Buscar empresas</a>
+      <a href="#crmSection">Meu CRM</a>
+    </nav>
+
+    <section id="dashboard" class="section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">01 / PESQUISA</p>
-          <h3>Encontrar empresas</h3>
+          <p class="eyebrow">01 / VISÃO GERAL</p>
+          <h2>Seu painel</h2>
+          <p class="muted">Acompanhe seu progresso comercial neste dispositivo.</p>
         </div>
-        <span class="live-pill"><i></i> Dados reais</span>
+        <span class="live-pill"><span class="pulse"></span> Painel atualizado</span>
       </div>
 
-      <form id="searchForm">
-        <label for="city">Cidade e estado</label>
-        <input id="city" name="city" autocomplete="address-level2" placeholder="Ex.: Vila Velha, Espírito Santo" required>
+      <div class="stats-grid">
+        <article class="stat-card stat-purple">
+          <span class="stat-icon">⌕</span>
+          <span class="stat-label">Encontradas na busca</span>
+          <strong id="foundCount">0</strong>
+          <small>Resultado da pesquisa atual</small>
+        </article>
+        <article class="stat-card">
+          <span class="stat-icon">◎</span>
+          <span class="stat-label">Leads salvos</span>
+          <strong id="savedCount">0</strong>
+          <small>Empresas no seu CRM</small>
+        </article>
+        <article class="stat-card">
+          <span class="stat-icon">↗</span>
+          <span class="stat-label">Contatos realizados</span>
+          <strong id="contactedCount">0</strong>
+          <small>Etapa contato feito ou posterior</small>
+        </article>
+        <article class="stat-card stat-green">
+          <span class="stat-icon">✓</span>
+          <span class="stat-label">Clientes conquistados</span>
+          <strong id="convertedCount">0</strong>
+          <small>Negócios convertidos</small>
+        </article>
+      </div>
 
-        <div class="field-grid">
-          <div>
-            <label for="segment">Segmento</label>
-            <select id="segment" name="segment">
-              <option value="all">Todos os segmentos</option>
-              <option value="restaurant">Restaurantes e lanchonetes</option>
-              <option value="acai">Açaíterias e lojas de açaí</option>
-              <option value="icecream">Sorveterias e sobremesas</option>
-              <option value="burger">Hamburguerias</option>
-              <option value="pizza">Pizzarias</option>
-              <option value="snack">Lanchonetes e hot dogs</option>
-              <option value="bakery">Docerias e confeitarias</option>
-              <option value="beauty">Barbearias e salões</option>
-              <option value="health">Clínicas e saúde</option>
-              <option value="auto">Oficinas e automotivo</option>
-              <option value="retail">Lojas e comércio</option>
-              <option value="clothing">Lojas de roupas</option>
-              <option value="services">Serviços profissionais</option>
-              <option value="lodging">Hotéis e hospedagem</option>
-              <option value="fitness">Academias e fitness</option>
-            </select>
+      <div class="dashboard-grid">
+        <article class="panel progress-panel">
+          <div class="section-heading compact-heading">
+            <div>
+              <p class="eyebrow">SEU FUNIL</p>
+              <h3>Pipeline comercial</h3>
+            </div>
+            <span id="pipelineTotal" class="count-badge">0 leads</span>
           </div>
+          <div id="pipelineCards" class="pipeline-cards"></div>
+          <p class="fineprint">Toque em uma etapa para filtrar os leads do CRM.</p>
+        </article>
 
-          <div>
-            <label for="radius">Raio de busca</label>
-            <select id="radius" name="radius">
-              <option value="3000">3 km</option>
-              <option value="5000" selected>5 km</option>
-              <option value="10000">10 km</option>
-              <option value="20000">20 km</option>
-            </select>
-          </div>
-        </div>
-
-        <button id="searchBtn" class="btn btn-primary btn-full" type="submit"><span class="search-icon">⌕</span> Buscar empresas</button>
-      </form>
-
-      <p class="fineprint">Busca baseada no OpenStreetMap. A cobertura varia por região; ausência de site nos dados não garante que a empresa não tenha um.</p>
-      <div id="status" class="status hidden" role="status" aria-live="polite"></div>
-    </section>
-
-    <section class="stats-grid" aria-label="Resumo">
-      <div class="stat-card">
-        <span class="stat-label">Encontradas</span>
-        <strong id="foundCount">0</strong>
-        <span class="stat-foot">nesta busca</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label">Sem site informado</span>
-        <strong id="noSiteCount">0</strong>
-        <span class="stat-foot">oportunidades a verificar</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label">Salvas</span>
-        <strong id="savedCount">0</strong>
-        <span class="stat-foot">na sua lista local</span>
+        <article class="panel priority-panel">
+          <p class="eyebrow">PRÓXIMA AÇÃO</p>
+          <h3>Não pare na pesquisa.</h3>
+          <p class="muted">Salve uma empresa, faça um contato personalizado e registre o resultado no CRM.</p>
+          <a href="#crmSection" class="btn btn-outline btn-full">Abrir meu CRM →</a>
+          <div class="priority-tip"><span>✦</span><p>Consistência na prospecção é mais útil do que apenas acumular contatos.</p></div>
+        </article>
       </div>
     </section>
 
-    <section class="panel results-panel">
-      <div class="section-heading results-heading">
+    <section id="searchSection" class="section">
+      <div class="section-heading">
         <div>
-          <p class="eyebrow">02 / RESULTADOS</p>
-          <h3>Empresas encontradas</h3>
+          <p class="eyebrow">02 / DESCOBERTA</p>
+          <h2>Encontrar empresas</h2>
+          <p class="muted">Pesquise negócios locais e identifique possíveis oportunidades.</p>
         </div>
-        <div class="toolbar">
-          <select id="filter" aria-label="Filtrar resultados">
-            <option value="all">Todas</option>
-            <option value="no-site">Sem site informado</option>
-            <option value="with-site">Com site informado</option>
+        <span class="source-pill">OpenStreetMap</span>
+      </div>
+
+      <div class="panel search-panel">
+        <form id="searchForm">
+          <div class="field">
+            <label for="city">Cidade e estado</label>
+            <input id="city" name="city" autocomplete="address-level2" placeholder="Ex.: Vila Velha, Espírito Santo" required>
+          </div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label for="segment">Segmento</label>
+              <select id="segment" name="segment">
+                <option value="all">Todos os segmentos</option>
+                <option value="restaurant">Restaurantes e lanchonetes</option>
+                <option value="acai">Açaíterias e lojas de açaí</option>
+                <option value="icecream">Sorveterias e sobremesas</option>
+                <option value="burger">Hamburguerias</option>
+                <option value="pizza">Pizzarias</option>
+                <option value="snack">Lanchonetes e hot dogs</option>
+                <option value="bakery">Docerias e confeitarias</option>
+                <option value="beauty">Barbearias e salões</option>
+                <option value="health">Clínicas e saúde</option>
+                <option value="auto">Oficinas e automotivo</option>
+                <option value="retail">Lojas e comércio</option>
+                <option value="clothing">Lojas de roupas</option>
+                <option value="services">Serviços profissionais</option>
+                <option value="lodging">Hotéis e hospedagem</option>
+                <option value="fitness">Academias e fitness</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="radius">Raio de busca</label>
+              <select id="radius" name="radius">
+                <option value="3000">3 km</option>
+                <option value="5000" selected>5 km</option>
+                <option value="10000">10 km</option>
+                <option value="20000">20 km</option>
+              </select>
+            </div>
+          </div>
+
+          <button id="searchBtn" class="btn btn-primary btn-full" type="submit">⌕ Buscar empresas</button>
+        </form>
+
+        <div id="status" class="status hidden" role="status" aria-live="polite"></div>
+        <p class="fineprint">A cobertura depende dos dados públicos disponíveis. Ausência de site, telefone ou WhatsApp na base não confirma que a empresa não tenha esses canais.</p>
+      </div>
+
+      <div class="results-toolbar">
+        <div>
+          <h3>Resultados da pesquisa</h3>
+          <p id="resultsSummary" class="muted">Faça uma busca para começar.</p>
+        </div>
+        <button id="exportBtn" class="btn btn-outline" type="button">Exportar CSV</button>
+      </div>
+
+      <div class="filter-bar">
+        <div class="field filter-search">
+          <label for="resultSearch">Nome da empresa</label>
+          <input id="resultSearch" type="search" placeholder="Filtrar resultados...">
+        </div>
+        <div class="field">
+          <label for="filter">Filtrar por</label>
+          <select id="filter">
+            <option value="all">Todas as empresas</option>
+            <option value="no-site">Site não informado</option>
+            <option value="with-site">Site informado</option>
+            <option value="with-phone">Com telefone</option>
+            <option value="no-phone">Sem telefone</option>
+            <option value="with-whatsapp">Número para tentar WhatsApp</option>
+            <option value="high-priority">Prioridade alta</option>
+            <option value="unsaved">Ainda não salvas</option>
           </select>
-          <button id="exportBtn" class="btn btn-outline" type="button">Exportar CSV</button>
+        </div>
+        <div class="field">
+          <label for="sortResults">Ordenar por</label>
+          <select id="sortResults">
+            <option value="priority">Maior oportunidade</option>
+            <option value="name">Nome A–Z</option>
+            <option value="phone">Com telefone primeiro</option>
+          </select>
         </div>
       </div>
 
       <div id="results" class="results-list">
         <div class="empty-state">
-          <div class="empty-icon">⌕</div>
-          <h4>Sua próxima oportunidade começa aqui</h4>
-          <p>Pesquise uma cidade para ver empresas reais disponíveis na base pública.</p>
+          <span class="empty-icon">⌕</span>
+          <h3>Sua próxima oportunidade começa aqui</h3>
+          <p>Pesquise uma cidade e um segmento para encontrar empresas.</p>
         </div>
       </div>
 
-      <div class="source-note">Dados de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>. Verifique as informações antes de entrar em contato.</div>
+      <p class="source-note">Fonte: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>. Verifique as informações antes de abordar uma empresa.</p>
     </section>
 
-    <section class="panel saved-panel">
+    <section id="crmSection" class="section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">03 / SEU PIPELINE</p>
-          <h3>Leads salvos</h3>
+          <p class="eyebrow">03 / GESTÃO COMERCIAL</p>
+          <h2>Meu CRM</h2>
+          <p class="muted">Organize seus contatos e acompanhe cada oportunidade.</p>
         </div>
         <span id="savedBadge" class="count-badge">0 leads</span>
       </div>
 
-      <div id="savedResults" class="saved-list">
-        <p class="muted empty-saved">Você ainda não salvou leads. Salve empresas para montar sua lista de prospecção.</p>
+      <div class="crm-summary" id="crmSummary">
+        <span>Seus leads ficam salvos neste dispositivo.</span>
       </div>
 
-      <div class="saved-actions">
-        <button id="exportSavedBtn" class="btn btn-outline" type="button">Exportar salvos CSV</button>
-        <button id="clearSavedBtn" class="btn btn-danger-ghost" type="button">Limpar lista</button>
+      <div class="panel crm-tools">
+        <div class="field">
+          <label for="savedSearch">Pesquisar lead salvo</label>
+          <input id="savedSearch" type="search" placeholder="Nome, telefone ou observação...">
+        </div>
+        <div class="field">
+          <label for="savedStageFilter">Etapa comercial</label>
+          <select id="savedStageFilter">
+            <option value="all">Todas as etapas</option>
+            <option value="Novo">Novo</option>
+            <option value="Contato feito">Contato feito</option>
+            <option value="Respondeu">Respondeu</option>
+            <option value="Em negociação">Em negociação</option>
+            <option value="Convertido">Convertido</option>
+            <option value="Sem interesse">Sem interesse</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="savedSort">Ordenar leads</label>
+          <select id="savedSort">
+            <option value="recent">Mais recentes</option>
+            <option value="priority">Maior oportunidade</option>
+            <option value="name">Nome A–Z</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="crm-actions">
+        <button id="exportSavedBtn" class="btn btn-outline" type="button">Exportar CRM CSV</button>
+        <button id="clearSavedBtn" class="btn btn-danger-ghost" type="button">Limpar todos os leads</button>
+      </div>
+
+      <div id="savedResults" class="results-list saved-list">
+        <div class="empty-state">
+          <span class="empty-icon">◎</span>
+          <h3>Seu CRM começa com o primeiro lead</h3>
+          <p>Pesquise empresas e toque em “Salvar lead” para adicioná-las aqui.</p>
+        </div>
       </div>
     </section>
 
-    <footer>
-      <p><strong>LeadFinder Brasil</strong> <span>• MVP gratuito</span></p>
-      <p>Use os dados de forma responsável. Respeite a privacidade e as preferências de contato das empresas.</p>
+    <footer class="footer">
+      <div class="footer-brand"><span class="brandmark small-mark">LF</span><strong>LeadFinder Brasil</strong></div>
+      <p>Ferramenta de apoio à prospecção comercial.</p>
+      <p>Os dados são obtidos de bases públicas e podem estar incompletos. Respeite as preferências de contato e a privacidade das empresas.</p>
     </footer>
   </main>
 
   <script src="app.js" defer></script>
-  <script src="pipeline.js" defer></script>
 </body>
 </html>
