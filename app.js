@@ -1,4 +1,3 @@
-
 const $ = (id) => document.getElementById(id);
 const STORAGE_KEY = "leadfinder-brasil-leads-v1";
 
@@ -60,8 +59,6 @@ const SEGMENTS = {
   health: { label: "Clínicas e saúde", filter: '["amenity"~"doctors|dentist|clinic|veterinary"]' },
   auto: { label: "Oficinas e automotivo", filter: '["shop"~"car_repair|tyres|car"]' },
   retail: { label: "Lojas e comércio", filter: '["shop"]' },
-
-  // NOVA CATEGORIA: LOJAS DE ROUPAS
   clothing: {
     label: "Lojas de roupas",
     filters: [
@@ -69,7 +66,6 @@ const SEGMENTS = {
       '["name"~"roupa|moda|vestuario|vestuário|boutique",i]'
     ]
   },
-
   services: { label: "Serviços profissionais", filter: '["office"]' },
   lodging: { label: "Hotéis e hospedagem", filter: '["tourism"~"hotel|guest_house|hostel|motel"]' },
   fitness: { label: "Academias e fitness", filter: '["leisure"~"fitness_centre|sports_centre"]' }
@@ -119,11 +115,19 @@ function setBusy(busy) {
 }
 
 function websiteOf(t) {
-  return t.website || t["contact:website"] || t.url || t["contact:url"] || "";
+  return t.website || t["contact:website"] || t.url ||
+    t["contact:url"] || t["website:menu"] ||
+    t["contact:website:mobile"] || "";
 }
 
 function phoneOf(t) {
-  return t.phone || t["contact:phone"] || t.mobile || t["contact:mobile"] || "";
+  return t.phone || t["contact:phone"] || t.mobile ||
+    t["contact:mobile"] || t["contact:whatsapp"] ||
+    t.whatsapp || "";
+}
+
+function whatsappOf(t) {
+  return t.whatsapp || t["contact:whatsapp"] || "";
 }
 
 function addressOf(t) {
@@ -148,9 +152,11 @@ function makeLead(el) {
     category: classify(t),
     website: websiteOf(t),
     phone: phoneOf(t),
+    whatsapp: whatsappOf(t),
     address: addressOf(t),
     city: $("city").value.trim(),
-    lat, lon,
+    lat,
+    lon,
     osmUrl: `https://www.openstreetmap.org/${el.type}/${el.id}`,
     updatedAt: new Date().toISOString()
   };
@@ -212,7 +218,6 @@ function editLeadNotes(id) {
   setStatus("Observações salvas neste dispositivo.", "success");
 }
 
-/* Abordagem comercial personalizada automaticamente */
 function outreachMessage(lead) {
   const rawName = (lead?.name || "").trim();
 
@@ -233,33 +238,24 @@ function outreachMessage(lead) {
     ? `Olá, pessoal da ${company}! Tudo bem?`
     : "Olá! Tudo bem?";
 
-  const companyMention = company
-    ? `a ${company}`
-    : "a empresa de vocês";
-
+  const companyMention = company ? `a ${company}` : "a empresa de vocês";
   const category = (lead?.category || "").toLowerCase();
 
   let benefit =
     "apresentar os serviços, facilitar o contato com clientes e transmitir mais confiança para quem pesquisa a empresa na internet.";
 
   if (/restaurant|fast_food|food|cafe|bar|ice_cream|acai|sorvete|lanchonete/i.test(category)) {
-    benefit =
-      "apresentar o cardápio, divulgar os produtos e facilitar o contato e os pedidos dos clientes.";
+    benefit = "apresentar o cardápio, divulgar os produtos e facilitar o contato e os pedidos dos clientes.";
   } else if (/clothes|fashion|roupa|moda|vestuario|vestuário|boutique/i.test(category)) {
-    benefit =
-      "apresentar as coleções, divulgar as peças, mostrar as novidades e facilitar o contato de clientes interessados nos produtos.";
+    benefit = "apresentar as coleções, divulgar as peças, mostrar as novidades e facilitar o contato de clientes interessados nos produtos.";
   } else if (/hairdresser|beauty|barber|sal[aã]o/i.test(category)) {
-    benefit =
-      "apresentar os serviços, mostrar os trabalhos realizados e facilitar o agendamento de clientes.";
+    benefit = "apresentar os serviços, mostrar os trabalhos realizados e facilitar o agendamento de clientes.";
   } else if (/doctor|dentist|clinic|health|cl[ií]nica/i.test(category)) {
-    benefit =
-      "apresentar os serviços, disponibilizar informações úteis e facilitar o contato para agendamentos.";
+    benefit = "apresentar os serviços, disponibilizar informações úteis e facilitar o contato para agendamentos.";
   } else if (/car_repair|car|tyres|auto|oficina/i.test(category)) {
-    benefit =
-      "apresentar os serviços, explicar como funciona o atendimento e facilitar o contato de novos clientes.";
+    benefit = "apresentar os serviços, explicar como funciona o atendimento e facilitar o contato de novos clientes.";
   } else if (/hotel|guest_house|hostel|lodging/i.test(category)) {
-    benefit =
-      "apresentar as acomodações, mostrar fotos e facilitar as consultas sobre reservas.";
+    benefit = "apresentar as acomodações, mostrar fotos e facilitar as consultas sobre reservas.";
   }
 
   return `${greeting}
@@ -374,6 +370,7 @@ async function queryOverpass(query) {
       lastError = err;
     }
   }
+
   throw lastError || new Error("Não foi possível acessar a base pública agora.");
 }
 
@@ -404,7 +401,7 @@ async function runSearch(e) {
     if (currentResults.length) {
       const withoutSite = currentResults.filter(x => !hasWebsite(x)).length;
       setStatus(
-        `Busca concluída: ${currentResults.length} empresas encontradas. ${withoutSite} sem site informado na base consultada. Confirme as informações antes de abordar os negócios.`,
+        `Busca concluída: ${currentResults.length} empresas encontradas. ${withoutSite} sem site cadastrado na base consultada. Confirme as informações antes de abordar os negócios.`,
         "success"
       );
     } else {
@@ -426,23 +423,27 @@ function filteredResults() {
   if (filter === "with-site") return currentResults.filter(x => hasWebsite(x));
   if (filter === "with-phone") return currentResults.filter(x => Boolean((x.phone || "").trim()));
   if (filter === "no-phone") return currentResults.filter(x => !((x.phone || "").trim()));
+  if (filter === "with-whatsapp") return currentResults.filter(x => Boolean((x.whatsapp || x.phone || "").trim()));
   return currentResults;
 }
 
 function setupContactFilters() {
   const filter = $("filter");
-  if (!filter || filter.querySelector('[value="with-phone"]')) return;
+  if (!filter) return;
 
   const options = [
     ["with-phone", "📞 Com telefone"],
-    ["no-phone", "🚫 Sem telefone"]
+    ["no-phone", "🚫 Sem telefone"],
+    ["with-whatsapp", "🟢 Número para tentar WhatsApp"]
   ];
 
-  options.reverse().forEach(([value, label]) => {
+  options.forEach(([value, label]) => {
+    if (filter.querySelector(`[value="${value}"]`)) return;
+
     const option = document.createElement("option");
     option.value = value;
     option.textContent = label;
-    filter.insertBefore(option, filter.options[1] || null);
+    filter.appendChild(option);
   });
 }
 
@@ -458,6 +459,7 @@ function googleSearchUrl(name, city, extra = "") {
 function safeUrl(url) {
   let value = (url || "").trim();
   if (!/^https?:\/\//i.test(value)) value = "https://" + value;
+
   try {
     const parsed = new URL(value);
     return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : "#";
@@ -488,9 +490,12 @@ function renderResults() {
 
   root.innerHTML = list.map(x => {
     const noSite = !hasWebsite(x);
-    const whatsappLabel = phoneLink(x.phone) === "#"
-      ? "📞 Ver telefone"
-      : "🟢 WhatsApp";
+    const whatsappNumber = x.whatsapp || x.phone;
+    const whatsappLabel = x.whatsapp
+      ? "🟢 WhatsApp cadastrado"
+      : phoneLink(whatsappNumber) === "#"
+        ? "📞 Ver telefone"
+        : "🟢 Tentar WhatsApp";
 
     return `
       <article class="lead-card">
@@ -505,14 +510,15 @@ function renderResults() {
           <div class="lead-tags">
             <span class="tag">Pontuação: ${prospectingPriority(x)}/100 · ${scoreLabel(x)}</span>
             <span class="tag ${noSite ? "no-site" : "has-site"}">
-              ${noSite ? "Sem site informado" : "Site informado"}
+              ${noSite ? "Site não cadastrado na base" : "Site cadastrado na base"}
             </span>
             ${noSite ? '<span class="tag">Oportunidade para investigar</span>' : ""}
-            ${x.phone ? '<span class="tag">Telefone disponível</span>' : ""}
+            ${x.phone ? '<span class="tag">Telefone cadastrado</span>' : ""}
+            ${x.whatsapp ? '<span class="tag">WhatsApp cadastrado</span>' : ""}
           </div>
           <div class="lead-links">
             ${x.website ? `<a href="${escapeHtml(safeUrl(x.website))}" target="_blank" rel="noopener noreferrer">🌐 Abrir site ↗</a>` : ""}
-            ${x.phone ? `<a href="${escapeHtml(phoneLink(x.phone))}" target="_blank" rel="noopener noreferrer">${whatsappLabel} ↗</a>` : ""}
+            ${whatsappNumber ? `<a href="${escapeHtml(phoneLink(whatsappNumber))}" target="_blank" rel="noopener noreferrer">${whatsappLabel} ↗</a>` : ""}
             <a href="${escapeHtml(googleSearchUrl(x.name, x.city, "telefone contato WhatsApp"))}" target="_blank" rel="noopener noreferrer">📞 Buscar telefone ↗</a>
             <a href="${escapeHtml(googleSearchUrl(x.name, x.city))}" target="_blank" rel="noopener noreferrer">🔎 Ver empresa no Google ↗</a>
             <a class="instagram-link" href="${escapeHtml(googleSearchUrl(x.name, x.city, "Instagram oficial"))}" target="_blank" rel="noopener noreferrer">📷 Buscar Instagram ↗</a>
@@ -532,6 +538,7 @@ function renderResults() {
   root.querySelectorAll("[data-save]").forEach(btn =>
     btn.addEventListener("click", () => saveLead(btn.dataset.save))
   );
+
   root.querySelectorAll("[data-copy]").forEach(btn =>
     btn.addEventListener("click", () => copyApproach(btn.dataset.copy, "results"))
   );
@@ -572,9 +579,12 @@ function renderSaved() {
 
   root.innerHTML = savedLeads.map(x => {
     const noSite = !hasWebsite(x);
-    const whatsappLabel = phoneLink(x.phone) === "#"
-      ? "📞 Ver telefone"
-      : "🟢 WhatsApp";
+    const whatsappNumber = x.whatsapp || x.phone;
+    const whatsappLabel = x.whatsapp
+      ? "🟢 WhatsApp cadastrado"
+      : phoneLink(whatsappNumber) === "#"
+        ? "📞 Ver telefone"
+        : "🟢 Tentar WhatsApp";
 
     return `
       <article class="lead-card">
@@ -589,14 +599,15 @@ function renderSaved() {
           <div class="lead-tags">
             <span class="tag">Pontuação: ${prospectingPriority(x)}/100 · ${scoreLabel(x)}</span>
             <span class="tag ${noSite ? "no-site" : "has-site"}">
-              ${noSite ? "Sem site informado" : "Site informado"}
+              ${noSite ? "Site não cadastrado na base" : "Site cadastrado na base"}
             </span>
             ${noSite ? '<span class="tag">Oportunidade para investigar</span>' : ""}
+            ${x.whatsapp ? '<span class="tag">WhatsApp cadastrado</span>' : ""}
             <span class="tag">${escapeHtml(x.stage || "Novo")}</span>
             ${x.notes ? `<span class="tag">Observações: ${escapeHtml(x.notes)}</span>` : ""}
           </div>
           <div class="lead-links">
-            ${x.phone ? `<a href="${escapeHtml(phoneLink(x.phone))}" target="_blank" rel="noopener noreferrer">${whatsappLabel} ↗</a>` : ""}
+            ${whatsappNumber ? `<a href="${escapeHtml(phoneLink(whatsappNumber))}" target="_blank" rel="noopener noreferrer">${whatsappLabel} ↗</a>` : ""}
             ${x.website ? `<a href="${escapeHtml(safeUrl(x.website))}" target="_blank" rel="noopener noreferrer">🌐 Site ↗</a>` : ""}
             <a href="${escapeHtml(googleSearchUrl(x.name, x.city || x.address, "telefone contato WhatsApp"))}" target="_blank" rel="noopener noreferrer">📞 Buscar telefone ↗</a>
             <a href="${escapeHtml(googleSearchUrl(x.name, x.city || x.address))}" target="_blank" rel="noopener noreferrer">🔎 Google ↗</a>
@@ -638,6 +649,7 @@ function renderSaved() {
         "Novo", "Contato feito", "Respondeu",
         "Em negociação", "Convertido", "Sem interesse"
       ];
+
       lead.stage = stages[(stages.indexOf(lead.stage) + 1) % stages.length];
       persistSaved();
     });
@@ -661,13 +673,13 @@ function exportCSV(list, filename) {
   }
 
   const headers = [
-    "Nome", "Segmento", "Site informado", "Telefone",
-    "Endereço", "Latitude", "Longitude", "Etapa",
-    "Pontuação", "Prioridade", "Observações", "Fonte"
+    "Nome", "Segmento", "Site cadastrado na base", "Telefone",
+    "WhatsApp cadastrado", "Endereço", "Latitude", "Longitude",
+    "Etapa", "Pontuação", "Prioridade", "Observações", "Fonte"
   ];
 
   const rows = list.map(x => [
-    x.name, x.category, x.website, x.phone, x.address,
+    x.name, x.category, x.website, x.phone, x.whatsapp, x.address,
     x.lat, x.lon, x.stage || "Novo",
     prospectingPriority(x), scoreLabel(x), x.notes || "", x.osmUrl
   ]);
@@ -699,6 +711,7 @@ $("exportSavedBtn").addEventListener("click", () =>
 
 $("clearSavedBtn").addEventListener("click", () => {
   if (!savedLeads.length) return;
+
   if (confirm("Tem certeza que deseja apagar todos os leads salvos deste dispositivo?")) {
     savedLeads = [];
     persistSaved();
@@ -721,6 +734,7 @@ $("installBtn").addEventListener("click", async () => {
     setStatus("No Android, abra o menu do navegador e escolha 'Instalar app' ou 'Adicionar à tela inicial'.");
     return;
   }
+
   installPrompt.prompt();
   await installPrompt.userChoice;
   installPrompt = null;
@@ -731,4 +745,4 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   });
-      }
+}
