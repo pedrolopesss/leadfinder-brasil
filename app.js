@@ -143,12 +143,29 @@ function classify(tags) {
   return "Negócio local";
 }
 
+/* CNPJ: aproveita os dados existentes no OpenStreetMap quando disponíveis. */
+function cnpjOf(tags) {
+  const raw = tags.cnpj || tags["tax_id"] ||
+    tags["company:tax_id"] || tags["ref:vat"] ||
+    tags["ref:br_cnpj"] || "";
+  const digits = String(raw).replace(/\D/g, "");
+  return digits.length === 14 ? digits : "";
+}
+
+function formatCnpj(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  return digits.length === 14
+    ? digits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")
+    : "";
+}
+
 function makeLead(element) {
   const tags = element.tags || {};
   return {
     id: `${element.type}/${element.id}`,
     name: tags.name || tags.brand || tags.operator || "Negócio sem nome cadastrado",
     category: classify(tags),
+    cnpj: cnpjOf(tags),
     website: websiteOf(tags),
     phone: phoneOf(tags),
     whatsapp: whatsappOf(tags),
@@ -352,7 +369,7 @@ function filteredResults() {
   const filter = $("filter").value;
   const query = normalize($("resultSearch").value);
   let list = currentResults.filter(lead => {
-    if (query && !normalize(`${lead.name} ${lead.category} ${lead.address} ${lead.phone}`).includes(query)) return false;
+    if (query && !normalize(`${lead.name} ${lead.category} ${lead.address} ${lead.phone} ${lead.cnpj || ""}`).includes(query)) return false;
 
     if (filter === "no-site" && hasWebsite(lead)) return false;
     if (filter === "with-site" && !hasWebsite(lead)) return false;
@@ -450,6 +467,41 @@ function saveLead(id) {
   setStatus(`${lead.name} foi adicionado ao CRM.`, "success");
 }
 
+/* Adicionar, corrigir ou remover o CNPJ de um lead. */
+function editCnpj(id, source) {
+  const list = source === "saved" ? savedLeads : currentResults;
+  const lead = list.find(item => item.id === id);
+  if (!lead) return;
+
+  const entered = prompt(
+    "Informe o CNPJ com 14 dígitos. Use “Buscar CNPJ” para consultar e confira se nome e cidade correspondem.",
+    lead.cnpj ? formatCnpj(lead.cnpj) : ""
+  );
+
+  if (entered === null) return;
+
+  const digits = String(entered).replace(/\D/g, "");
+
+  if (digits && digits.length !== 14) {
+    setStatus("CNPJ inválido: informe os 14 dígitos, sem precisar digitar pontos ou barras.", "error");
+    return;
+  }
+
+  lead.cnpj = digits;
+  lead.updatedAt = new Date().toISOString();
+
+  if (source === "saved") {
+    persistSaved();
+  } else {
+    renderResults();
+  }
+
+  setStatus(
+    digits ? "CNPJ salvo. Confira se corresponde à empresa correta." : "CNPJ removido deste lead.",
+    "success"
+  );
+}
+
 function editNotes(id) {
   const lead = savedLeads.find(item => item.id === id);
   if (!lead) return;
@@ -507,6 +559,7 @@ function leadCard(lead, source) {
   const whatsappUrl = phoneLink(lead);
   const locationText = lead.address || lead.city || "";
   const score = prospectingPriority(lead);
+
   const stageOptions = STAGES.map(stage =>
     `<option value="${escapeHtml(stage)}" ${stage === (lead.stage || "Novo") ? "selected" : ""}>${escapeHtml(stage)}</option>`
   ).join("");
@@ -519,22 +572,42 @@ function leadCard(lead, source) {
           <h3 class="lead-title">${escapeHtml(lead.name)}</h3>
           <span class="score-pill ${score >= 75 ? "score-high" : score >= 50 ? "score-medium" : "score-low"}">${score}/100</span>
         </div>
+
         <p class="lead-meta">${escapeHtml(lead.category)}${locationText ? ` · ${escapeHtml(locationText)}` : ""}</p>
+
         ${lead.phone ? `<p class="lead-meta">Telefone: <strong>${escapeHtml(lead.phone)}</strong></p>` : ""}
+
+        <p class="lead-meta" style="margin-top:7px">
+          CNPJ:
+          <strong style="color:#d8c2ff">${lead.cnpj ? escapeHtml(formatCnpj(lead.cnpj)) : "Não identificado"}</strong>
+        </p>
+
         <div class="lead-tags">
           <span class="tag ${noSite ? "tag-warning" : "tag-good"}">${noSite ? "Site não informado" : "Site informado"}</span>
           ${lead.phone ? '<span class="tag">Telefone disponível</span>' : '<span class="tag tag-warning">Sem telefone na base</span>'}
           ${lead.whatsapp ? '<span class="tag tag-good">WhatsApp cadastrado</span>' : ""}
           ${source === "saved" ? `<span class="tag tag-stage">${escapeHtml(lead.stage || "Novo")}</span>` : ""}
         </div>
+
         <div class="lead-links">
           ${lead.website ? `<a href="${escapeHtml(safeUrl(lead.website))}" target="_blank" rel="noopener noreferrer">↗ Abrir site</a>` : ""}
+
           ${whatsappUrl ? `<a class="whatsapp-link" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noopener noreferrer">◉ ${lead.whatsapp ? "WhatsApp cadastrado" : "Tentar WhatsApp"}</a>` : ""}
+
           ${lead.phone ? `<a href="tel:${escapeHtml(lead.phone.replace(/[^\d+]/g, ""))}">☎ Ligar</a>` : ""}
+
+          <a href="${escapeHtml(googleSearchUrl(lead.name, locationText, "CNPJ"))}" target="_blank" rel="noopener noreferrer">⌕ Buscar CNPJ</a>
+
+          ${lead.cnpj ? `<a href="${escapeHtml(googleSearchUrl(formatCnpj(lead.cnpj), locationText, "empresa cadastro"))}" target="_blank" rel="noopener noreferrer">↗ Conferir CNPJ</a>` : ""}
+
           <a href="${escapeHtml(googleSearchUrl(lead.name, locationText, "telefone contato"))}" target="_blank" rel="noopener noreferrer">⌕ Buscar telefone</a>
+
           <a class="instagram-link" href="${escapeHtml(googleSearchUrl(lead.name, locationText, "Instagram oficial"))}" target="_blank" rel="noopener noreferrer">◎ Buscar Instagram</a>
+
           <a href="${escapeHtml(googleSearchUrl(lead.name, locationText))}" target="_blank" rel="noopener noreferrer">Google</a>
+
           ${lead.osmUrl ? `<a href="${escapeHtml(lead.osmUrl)}" target="_blank" rel="noopener noreferrer">Mapa de dados</a>` : ""}
+
           ${lead.lat != null && lead.lon != null ? `<a href="https://www.google.com/maps/search/?api=1&query=${lead.lat},${lead.lon}" target="_blank" rel="noopener noreferrer">Abrir mapa</a>` : ""}
         </div>
 
@@ -555,8 +628,14 @@ function leadCard(lead, source) {
           <button type="button" class="mini-btn ${saved ? "saved" : ""}" data-save="${escapeHtml(lead.id)}" ${saved ? "disabled" : ""}>
             ${saved ? "✓ No CRM" : "＋ Salvar lead"}
           </button>
+          <button type="button" class="mini-btn" data-cnpj="${escapeHtml(lead.id)}" data-cnpj-source="results">
+            ${lead.cnpj ? "Editar CNPJ" : "Adicionar CNPJ"}
+          </button>
           <button type="button" class="mini-btn" data-copy="${escapeHtml(lead.id)}">Copiar abordagem</button>
         ` : `
+          <button type="button" class="mini-btn" data-cnpj="${escapeHtml(lead.id)}" data-cnpj-source="saved">
+            ${lead.cnpj ? "Editar CNPJ" : "Adicionar CNPJ"}
+          </button>
           <button type="button" class="mini-btn" data-copy-saved="${escapeHtml(lead.id)}">Copiar abordagem</button>
           <button type="button" class="mini-btn" data-notes="${escapeHtml(lead.id)}">Editar observações</button>
           <button type="button" class="mini-btn" data-contacted="${escapeHtml(lead.id)}">Registrar contato</button>
@@ -594,7 +673,7 @@ function filteredSaved() {
 
   let list = savedLeads.filter(lead => {
     if (stage !== "all" && (lead.stage || "Novo") !== stage) return false;
-    const text = normalize(`${lead.name} ${lead.phone} ${lead.category} ${lead.address} ${lead.notes}`);
+    const text = normalize(`${lead.name} ${lead.phone} ${lead.cnpj || ""} ${lead.category} ${lead.address} ${lead.notes}`);
     return !query || text.includes(query);
   });
 
@@ -605,6 +684,7 @@ function filteredSaved() {
   if (activePipelineStage) {
     list = list.filter(lead => (lead.stage || "Novo") === activePipelineStage);
   }
+
   return list;
 }
 
@@ -635,15 +715,18 @@ function renderSaved() {
 function updateDashboard() {
   $("foundCount").textContent = currentResults.length;
   $("savedCount").textContent = savedLeads.length;
+
   $("contactedCount").textContent = savedLeads.filter(lead =>
     ["Contato feito", "Respondeu", "Em negociação", "Convertido"].includes(lead.stage)
   ).length;
+
   $("convertedCount").textContent = savedLeads.filter(lead => lead.stage === "Convertido").length;
   $("pipelineTotal").textContent = `${savedLeads.length} ${savedLeads.length === 1 ? "lead" : "leads"}`;
 
   $("pipelineCards").innerHTML = STAGES.map(stage => {
     const count = savedLeads.filter(lead => (lead.stage || "Novo") === stage).length;
     const active = activePipelineStage === stage;
+
     return `<button type="button" class="pipeline-card ${active ? "active" : ""}" data-pipeline="${escapeHtml(stage)}" aria-pressed="${active}">
       <span>${escapeHtml(stage)}</span><strong>${count}</strong>
     </button>`;
@@ -661,22 +744,34 @@ function exportCSV(list, filename) {
   }
 
   const headers = [
-    "Nome", "Segmento", "Site informado na base", "Telefone",
+    "Nome", "CNPJ", "Segmento", "Site informado na base", "Telefone",
     "WhatsApp cadastrado", "Endereço", "Cidade", "Etapa",
     "Pontuação", "Prioridade", "Observações", "Fonte"
   ];
 
   const rows = list.map(lead => [
-    lead.name, lead.category, lead.website, lead.phone, lead.whatsapp,
-    lead.address, lead.city, lead.stage || "Novo",
-    prospectingPriority(lead), scoreLabel(lead), lead.notes || "", lead.osmUrl
+    lead.name,
+    lead.cnpj ? formatCnpj(lead.cnpj) : "",
+    lead.category,
+    lead.website,
+    lead.phone,
+    lead.whatsapp,
+    lead.address,
+    lead.city,
+    lead.stage || "Novo",
+    prospectingPriority(lead),
+    scoreLabel(lead),
+    lead.notes || "",
+    lead.osmUrl
   ]);
 
   const csv = "\uFEFF" + [headers, ...rows]
     .map(row => row.map(csvEscape).join(";")).join("\r\n");
+
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
+
   anchor.href = url;
   anchor.download = filename;
   document.body.appendChild(anchor);
@@ -703,7 +798,9 @@ $("exportSavedBtn").addEventListener("click", () =>
 
 $("clearSavedBtn").addEventListener("click", () => {
   if (!savedLeads.length) return;
+
   if (!confirm("Tem certeza que deseja apagar TODOS os leads salvos neste dispositivo? Esta ação não pode ser desfeita.")) return;
+
   savedLeads = [];
   activePipelineStage = null;
   persistSaved();
@@ -715,6 +812,7 @@ document.addEventListener("click", event => {
   if (!button) return;
 
   if (button.dataset.save) saveLead(button.dataset.save);
+  if (button.dataset.cnpj) editCnpj(button.dataset.cnpj, button.dataset.cnpjSource);
   if (button.dataset.copy) copyApproach(button.dataset.copy, "results");
   if (button.dataset.copySaved) copyApproach(button.dataset.copySaved, "saved");
   if (button.dataset.notes) editNotes(button.dataset.notes);
@@ -762,6 +860,7 @@ $("installBtn").addEventListener("click", async () => {
     setStatus("Abra o menu do navegador e selecione “Instalar app” ou “Adicionar à tela inicial”.");
     return;
   }
+
   installPrompt.prompt();
   await installPrompt.userChoice;
   installPrompt = null;
